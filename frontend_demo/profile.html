@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Shopping - User Profile</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #fbfbfd;
+            color: #1d1d1f;
+        }
+
+        /* 顶部毛玻璃导航 */
+        .glass-nav {
+            background: rgba(251, 251, 253, 0.8);
+            backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* 弥散背景装饰 */
+        .mesh-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(at 80% 0%, rgba(0, 113, 227, 0.08) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(94, 92, 230, 0.05) 0px, transparent 50%);
+            z-index: -1;
+        }
+
+        /* 苹果风格卡片 */
+        .bento-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 28px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .bento-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        /* 渐变图标背景 */
+        .icon-box {
+            background: linear-gradient(135deg, #0071e3, #5e5ce6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            border-radius: 14px;
+        }
+
+        /* 标签动画 */
+        .tag-pill {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.02);
+            transition: all 0.2s;
+        }
+        .tag-pill:hover {
+            background: #0071e3;
+            color: white;
+            border-color: #0071e3;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="mesh-bg"></div>
+
+        <nav class="glass-nav fixed top-0 w-full z-50">
+            <div class="max-w-6xl mx-auto px-6 h-12 flex justify-between items-center">
+                <div class="text-sm font-semibold tracking-tight cursor-pointer" @click="goHome">AI 智能购物</div>
+                <div class="flex items-center space-x-6 text-[12px] text-gray-500">
+                    <span class="hover:text-black cursor-pointer">我的足迹</span>
+                    <span class="hover:text-black cursor-pointer">账户安全</span>
+                    <div class="w-6 h-6 rounded-full bg-gray-200"></div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="pt-24 pb-20 px-6 max-w-5xl mx-auto">
+            
+            <header class="flex flex-col md:flex-row items-center md:items-end justify-between mb-12 space-y-6">
+                <div class="flex items-center space-x-6">
+                    <div class="w-24 h-24 rounded-full bg-white shadow-xl p-1">
+                        <div class="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-3xl font-bold">
+                            U
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="text-4xl font-bold tracking-tight">你好，探索者</h1>
+                        <p class="text-gray-500 mt-1">账户状态：<span class="text-green-500">省钱购物中......</span></p>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <button class="bg-gray-100 hover:bg-gray-200 px-6 py-2.5 rounded-full text-sm font-medium transition">编辑资料</button>
+                    <button class="bg-black text-white px-6 py-2.5 rounded-full text-sm font-medium transition">会员中心</button>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div class="md:col-span-2 bento-card p-8">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold">AI 购物基因</h3>
+                            <p class="text-sm text-gray-400">基于 124 次语义检索生成的画像</p>
+                        </div>
+                        <div class="icon-box w-10 h-10">✦</div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-3 mt-8">
+                        <span v-for="tag in ['极简主义', '高性能数码', '环保材质', '北欧色彩', '人体工学', '智能家居']" 
+                              class="tag-pill px-5 py-2 rounded-full text-sm cursor-default">
+                            {{ tag }}
+                        </span>
+                        <span class="px-5 py-2 rounded-full text-sm bg-blue-50 text-blue-600 font-medium">+ 正在挖掘新偏好</span>
+                    </div>
+                    
+                    <div class="mt-10 p-6 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                        <p class="text-sm text-blue-800 leading-relaxed italic">
+                            “AI 观察到您近期对‘户外办公’表现出浓厚兴趣，已为您动态调整了首页的推荐权重。”
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bento-card p-8 flex flex-col justify-between">
+                    <h3 class="text-xl font-bold mb-4">进行中的订单</h3>
+                    <div class="space-y-6">
+                        <div v-for="i in 2" :key="i" class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-gray-100 rounded-lg flex-shrink-0"></div>
+                            <div class="flex-grow">
+                                <p class="text-xs font-bold text-blue-600 uppercase tracking-tighter">运输中</p>
+                                <p class="text-sm font-medium truncate">智能感应台灯 Pro</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="w-full mt-8 py-3 bg-gray-50 rounded-xl text-sm font-semibold hover:bg-gray-100 transition">查看全部订单</button>
+                </div>
+
+                <div class="bento-card p-8">
+                    <h3 class="text-xl font-bold mb-6">智能助理偏好</h3>
+                    <div class="space-y-5">
+                        <div v-for="setting in settings" :key="setting.name" class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-gray-600">{{ setting.name }}</span>
+                            <div @click="setting.value = !setting.value" 
+                                 :class="setting.value ? 'bg-green-500' : 'bg-gray-200'"
+                                 class="w-10 h-5 rounded-full relative cursor-pointer transition-colors duration-300">
+                                <div :class="setting.value ? 'translate-x-5' : 'translate-x-0.5'"
+                                     class="absolute top-0.5 left-0 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-300"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 bento-card p-8">
+                    <div class="flex justify-between items-baseline mb-6">
+                        <h3 class="text-xl font-bold">愿望清单</h3>
+                        <span class="text-xs text-blue-600 font-bold cursor-pointer hover:underline">整理清单</span>
+                    </div>
+                    <div class="flex space-x-4 overflow-x-auto no-scrollbar pb-2">
+                        <div v-for="i in 4" :key="i" class="w-32 flex-shrink-0">
+                            <div class="aspect-square bg-gray-50 rounded-2xl mb-2 flex items-center justify-center border border-black/5">
+                                <span class="text-[10px] text-gray-300 font-bold tracking-widest uppercase">ITEM</span>
+                            </div>
+                            <p class="text-[11px] font-semibold truncate px-1">智能配件 {{i}}</p>
+                            <p class="text-[11px] text-gray-400 px-1">¥ 1,299</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <footer class="mt-16 text-center">
+                <button class="text-sm text-gray-400 hover:text-red-500 transition">退出登录</button>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive } = Vue;
+        createApp({
+            setup() {
+                const settings = reactive([
+                    { name: '自动多模态识别', value: true },
+                    { name: '模糊意图增强', value: true },
+                    { name: '隐私数据加密', value: true },
+                    { name: '实时降价提醒', value: false }
+                ]);
+
+                const goHome = () => { alert('返回主界面'); };
+
+                return { settings, goHome };
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>

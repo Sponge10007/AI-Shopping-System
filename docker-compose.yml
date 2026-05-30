@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ai-shop-postgres
+    environment:
+      POSTGRES_DB: ai_shop
+      POSTGRES_USER: ai_shop
+      POSTGRES_PASSWORD: ai_shop
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
+
+  redis:
+    image: redis:7
+    container_name: ai-shop-redis
+    ports:
+      - "6379:6379"
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: ai-shop-chroma
+    ports:
+      - "8002:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
+volumes:
+  postgres_data:
+  chroma_data:
+

@@ -1,0 +1,62 @@
+{
+  "info": {
+    "name": "AI Shopping System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{backend_base_url}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"account\":\"alice\",\"password\":\"Password123!\"}"
+        }
+      }
+    },
+    {
+      "name": "Product List",
+      "request": {
+        "method": "GET",
+        "url": "{{backend_base_url}}/api/v1/products"
+      }
+    },
+    {
+      "name": "Semantic Search",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer dev-access-token" }
+        ],
+        "url": "{{backend_base_url}}/api/v1/search/semantic",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"query\":\"300元以内适合通勤的蓝牙降噪耳机\",\"distance_threshold\":0.9,\"limit\":20}"
+        }
+      }
+    },
+    {
+      "name": "AI Internal Search",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Internal-Token", "value": "dev-internal-token" }
+        ],
+        "url": "{{ai_base_url}}/internal/v1/ai/search/products",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"user_id\":\"u10001\",\"query\":\"耳机\",\"limit\":5}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "backend_base_url", "value": "http://localhost:8080" },
+    { "key": "ai_base_url", "value": "http://localhost:8001" }
+  ]
+}
+

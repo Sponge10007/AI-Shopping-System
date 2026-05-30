@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Product Detail - Apple Style</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #1d1d1f; }
+        .glass-header { background: rgba(255, 255, 255, 0.7); backdrop-filter: saturate(180%) blur(20px); }
+        .bento-inner { background: #f5f5f7; border-radius: 24px; transition: all 0.3s ease; }
+        .ai-badge { background: linear-gradient(90deg, #0071e3, #5e5ce6); color: white; border-radius: 980px; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <nav class="glass-header fixed top-0 w-full z-50 h-12 flex items-center border-b border-gray-100 px-6">
+            <span class="text-xs font-semibold">详情回顾 / 智能分析</span>
+        </nav>
+
+        <main class="pt-20 max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div class="lg:col-span-7">
+                <div class="sticky top-20">
+                    <div class="aspect-square bento-inner flex items-center justify-center mb-6">
+                        <span class="text-gray-300 font-bold text-4xl uppercase tracking-widest">Product High-Res</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div v-for="i in 4" class="aspect-square bento-inner border-2 border-transparent hover:border-blue-500 cursor-pointer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 space-y-10">
+                <section>
+                    <span class="ai-badge px-3 py-1 text-[10px] font-bold uppercase tracking-widest">AI Verified</span>
+                    <h1 class="text-4xl font-bold mt-4 tracking-tight">智能降噪耳机 Pro Max</h1>
+                    <p class="text-2xl font-medium mt-2 text-gray-500">¥ 2,899</p>
+                </section>
+
+                <div class="p-8 bg-blue-50/50 border border-blue-100 rounded-[32px]">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <span class="text-blue-600">✦</span>
+                        <h3 class="text-sm font-bold text-blue-900">为什么它适合你？</h3>
+                    </div>
+                    <p class="text-sm text-blue-800 leading-relaxed italic">
+                        “基于您上周搜索的‘长途飞行舒适度’与‘极简美学’标签，这款耳机提供了行业领先的 45dB 降噪及皮革材质，完全符合您的语义偏好。”
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bento-inner p-6 text-center">
+                        <p class="text-xs text-gray-400 mb-1">AI 匹配度</p>
+                        <p class="text-2xl font-bold">98.5%</p>
+                    </div>
+                    <div class="bento-inner p-6 text-center">
+                        <p class="text-xs text-gray-400 mb-1">性能权重</p>
+                        <p class="text-2xl font-bold">极致</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <button class="w-full bg-black text-white py-5 rounded-2xl font-semibold text-lg hover:bg-gray-800 transition">立即选购</button>
+                    <button class="w-full bg-[#f5f5f7] text-black py-5 rounded-2xl font-semibold text-lg hover:bg-gray-200 transition">加入对比清单</button>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

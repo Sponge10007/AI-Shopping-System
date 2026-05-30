@@ -1,0 +1,28 @@
+.DS_Store
+Thumbs.db
+
+# Java
+backend/target/
+*.class
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Python
+ai-service/.venv/
+ai-service/__pycache__/
+ai-service/**/__pycache__/
+ai-service/.pytest_cache/
+*.pyc
+
+# Environment
+.env
+.env.local
+*.log
+
+# Runtime data
+storage/
+uploads/
+
