@@ -53,7 +53,7 @@ async function submitProduct() {
         image_urls: [form.value.imageUrl],
     })
     result.value = `${response.product_id} / ${response.status} / ${response.vector_index_status}`
-    alert("已上架！")
+    alert("成功上架！")
   }catch{
     alert("上架失败！")
   }

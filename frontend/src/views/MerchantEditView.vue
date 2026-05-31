@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PackagePlus, Upload } from 'lucide-vue-next'
+import { PackagePlus, Sparkles, Upload } from 'lucide-vue-next'
 import { getMerchantProduct, editMerchantProduct, uploadProductImage } from '../services/api'
 
 const route = useRoute()
@@ -53,23 +53,30 @@ async function submitProduct() {
 
   if (errors.value.length) return
 
-  const response = await editMerchantProduct(id, {
-    name: form.value.name,
-    description: form.value.description,
-    price: form.value.price,
-    stock: form.value.stock,
-    tags: form.value.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
-    image_urls: [form.value.imageUrl],
-  })
-  result.value = '保存成功'
-  router.push({ name: 'merchant' })
+  try{
+    const response = await editMerchantProduct(id, {
+      name: form.value.name,
+      description: form.value.description,
+      price: form.value.price,
+      stock: form.value.stock,
+      tags: form.value.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
+      image_urls: [form.value.imageUrl],
+    })
+    result.value = '编辑成功！'
+    alert('编辑成功')
+  }
+  catch{
+    result.value = '编辑失败！'
+    alert('编辑失败')
+  }
+
 }
 
 
-function isImageUrl(url: string): Promise<boolean> {
+async function isImageUrl(url: string): Promise<boolean> {
   
   //测试环境，上线要注释
-  if(url.startsWith("https://example.com/uploads/products/")){
+  if(url.startsWith("https://example.com/")){
     return Promise.resolve(true)
   }
 
@@ -115,7 +122,7 @@ function triggerFileInput() {
     <section>
       <header class="page-title">
         <p>Merchant</p>
-        <h1>商品上架</h1>
+        <h1>商品编辑</h1>
       </header>
 
       <form class="bento-card merchant-form" @submit.prevent="submitProduct">
@@ -151,7 +158,7 @@ function triggerFileInput() {
           </button>
           <button type="submit" class="black-button">
             <PackagePlus :size="18" />
-            <span>编辑</span>
+            <span>保存</span>
           </button>
         </div>
         <div class="form-errors" v-if="errors.length">
@@ -177,10 +184,10 @@ function triggerFileInput() {
       <section class="bento-card ai-note">
         <Sparkles :size="18" />
         <div>
-          <h3>索引状态</h3>
+          <h3>编辑状态</h3>
           <p>
             <template v-if="result">{{ result }}</template>
-            <template v-else>商品保存后将自动提交向量索引任务。AI 索引可能存在短暂延迟，请稍候查看 `vector_index_status`。</template>
+            <template v-else>暂未修改</template>
           </p>
         </div>
       </section>
