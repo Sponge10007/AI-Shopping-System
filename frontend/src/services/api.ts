@@ -1,3 +1,5 @@
+import { sessionState } from '../stores/session'
+
 const API_BASE = '/api/v1'
 
 export interface ProductSummary {
@@ -146,6 +148,65 @@ export async function createMerchantProduct(payload: {
   return request('/merchant/products', {
     method: 'POST',
     body: JSON.stringify(payload),
+  })
+}
+
+export async function listMerchantProducts(): Promise<PageResponse<ProductSummary>> {
+  try {
+    return await request<PageResponse<ProductSummary>>('/merchant/products')
+  } catch {
+    return { items: fallbackProducts, page: 1, size: 20, total: fallbackProducts.length, has_next: false }
+  }
+}
+
+export async function editMerchantProduct(productId: string, payload: Partial<{ name: string; description: string; price: string; stock: number; tags: string[]; image_urls: string[] }>) {
+  return request(`/merchant/products/${productId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function restockProduct(productId: string, amount: number) {
+  return request(`/merchant/products/${productId}/restock`, {
+    method: 'POST',
+    body: JSON.stringify({ amount }),
+  })
+}
+
+export async function deleteMerchantProduct(productId: string) {
+  return request(`/merchant/products/${productId}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function uploadProductImage(file: File): Promise<{ url: string }> {
+  const fd = new FormData()
+  fd.append('image', file)
+  const response = await fetch(`${API_BASE}/uploads/product-images`, {
+    method: 'POST',
+    body: fd,
+    headers: {
+      // Content-Type should NOT be set when sending FormData
+      Authorization: `Bearer ${sessionState.token}`,
+    },
+  })
+  if (!response.ok) throw new Error('Upload failed')
+  const uploadProductImageResult = await response.json()
+  return uploadProductImageResult.data
+}
+
+export async function listAdminUsers(): Promise<PageResponse<{ user_id: string; name: string; role: string; status: string }>> {
+  try {
+    return await request('/admin/users')
+  } catch {
+    return { items: [{ user_id: 'u10001', name: '测试商家', role: 'MERCHANT', status: 'ACTIVE' }], page: 1, size: 20, total: 1, has_next: false }
+  }
+}
+
+export async function updateUserStatus(userId: string, status: string) {
+  return request(`/admin/users/${userId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
   })
 }
 

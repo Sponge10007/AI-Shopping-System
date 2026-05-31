@@ -37,31 +37,18 @@ onMounted(async () => {
       <span>用户、商品、交易和 AI 服务状态集中展示。</span>
     </header>
 
-    <section class="metric-grid">
-      <article v-for="metric in metrics" :key="metric.label" class="bento-card metric-card">
-        <component :is="metric.icon" :size="22" />
-        <span>{{ metric.label }}</span>
-        <strong>{{ metric.value }}</strong>
-      </article>
-    </section>
+    <section class="admin-actions">
+      <div class="bento-card action-card">
+        <h2>用户管理</h2>
+        <p>管理平台用户、商家和管理员的状态与权限。</p>
+        <RouterLink to="/admin/users" class="black-button">进入用户管理</RouterLink>
+      </div>
 
-    <section class="admin-grid">
-      <article class="bento-card admin-insight">
-        <span class="ai-chip small-chip">AI Insight</span>
-        <h2>平台运行建议</h2>
-        <p>
-          当前商品和订单规模适合先开启语义搜索缓存。推荐将 AI 搜索、首页推荐和商品详情摘要作为第一批监控指标。
-        </p>
-      </article>
-
-      <article class="bento-card service-panel">
-        <h2>服务状态</h2>
-        <div v-for="service in serviceState" :key="service.label" class="service-row">
-          <component :is="service.icon" :size="18" />
-          <span>{{ service.label }}</span>
-          <strong>{{ service.value }}</strong>
-        </div>
-      </article>
+      <div class="bento-card action-card">
+        <h2>平台监控</h2>
+        <p>查看商品、订单、AI 服务和向量库的实时状态概览。</p>
+        <RouterLink to="/admin/metrics" class="black-button">查看监控概览</RouterLink>
+      </div>
     </section>
   </div>
 </template>
