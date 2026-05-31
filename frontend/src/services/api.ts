@@ -1,3 +1,4 @@
+import { error } from 'echarts/types/src/util/log.js'
 import { sessionState } from '../stores/session'
 
 const API_BASE = '/api/v1'
@@ -145,17 +146,22 @@ export async function createMerchantProduct(payload: {
   tags: string[]
   image_urls: string[]
 }): Promise<{ product_id: string; status: string; vector_index_status: string }> {
-  return request('/merchant/products', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  try{
+    return await request('/merchant/products', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  }catch(e){
+    throw new Error("createMerchantProduct:request");
+  }
+  
 }
 
 export async function listMerchantProducts(): Promise<PageResponse<ProductSummary>> {
   try {
     return await request<PageResponse<ProductSummary>>('/merchant/products')
   } catch {
-    return { items: fallbackProducts, page: 1, size: 20, total: fallbackProducts.length, has_next: false }
+    throw new Error("listMerchantProducts : Can't Get !")
   }
 }
 
@@ -166,17 +172,36 @@ export async function editMerchantProduct(productId: string, payload: Partial<{ 
   })
 }
 
-export async function restockProduct(productId: string, amount: number) {
-  return request(`/merchant/products/${productId}/restock`, {
-    method: 'POST',
-    body: JSON.stringify({ amount }),
-  })
+export async function getMerchantProduct(productId: string): Promise<Product> {
+  try {
+    return await request<Product>(`/products/${productId}`)
+  } catch {
+    // fallback sample
+    throw new Error("getMerchantProduct")
+  }
+}
+
+export async function restockProduct(productId: string, quantity: number) : Promise<{stock:number}> {
+  try{
+    return  await request(`/merchant/products/${productId}/restock`, {
+              method: 'POST',
+              body: JSON.stringify({ quantity,remark:"0"}),
+            })
+  }catch{
+    throw new Error("restockProduct");
+  }
+  
 }
 
 export async function deleteMerchantProduct(productId: string) {
-  return request(`/merchant/products/${productId}`, {
-    method: 'DELETE',
-  })
+  try {
+    return request(`/merchant/products/${productId}`, {
+      method: 'DELETE',
+    })
+  } catch {
+    throw new Error("deleteMerchantProduct : Can't Delete !")
+  }
+  
 }
 
 export async function uploadProductImage(file: File): Promise<{ url: string }> {

@@ -22,24 +22,28 @@ onMounted(async () => {
 
 <template>
   <div class="page admin-metrics">
-    <header class="page-title">
-      <p>Admin</p>
-      <h1>平台监控概览</h1>
-    </header>
+    <div class="max-w-[1000px] mx-auto px-6">
+      <header class="page-title">
+        <p style="color:#6b7280">Admin</p>
+        <h1 style="font-size:26px;margin-top:6px">平台监控概览</h1>
+      </header>
 
-    <section class="bento-card">
-      <div class="metric-row" v-for="m in metrics" :key="m.label">
-        <span>{{ m.label }}</span>
-        <strong>{{ m.value }}</strong>
-      </div>
-    </section>
-
-    <section class="bento-card">
-      <h2>服务状态</h2>
-      <div v-for="s in serviceState" :key="s.label" class="service-row">
-        <span>{{ s.label }}</span>
-        <strong>{{ s.value }}</strong>
-      </div>
-    </section>
+      <section class="bento-card" style="display:flex;gap:12px;padding:14px">
+        <div style="flex:1">
+          <h3 style="margin-bottom:8px;color:#6b7280">主要指标</h3>
+          <div class="metric-row" v-for="m in metrics" :key="m.label" style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px dashed #eef2f7">
+            <span>{{ m.label }}</span>
+            <strong>{{ m.value }}</strong>
+          </div>
+        </div>
+        <div style="width:260px">
+          <h3 style="margin-bottom:8px;color:#6b7280">服务状态</h3>
+          <div v-for="s in serviceState" :key="s.label" class="service-row" style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px dashed #eef2f7">
+            <span>{{ s.label }}</span>
+            <strong>{{ s.value }}</strong>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 </template>

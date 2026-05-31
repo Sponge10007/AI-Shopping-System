@@ -1,20 +1,30 @@
 <script setup lang="ts">
-import { PackagePlus, Sparkles, Upload } from 'lucide-vue-next'
-import { ref, watch, watchEffect } from 'vue'
-import { createMerchantProduct, uploadProductImage } from '../services/api'
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { PackagePlus, Upload } from 'lucide-vue-next'
+import { getMerchantProduct, editMerchantProduct, uploadProductImage } from '../services/api'
 
-const form = ref({
-  name: '蓝牙降噪耳机',
-  description: '适合通勤和学习的主动降噪蓝牙耳机',
-  price: '299.00',
-  stock: 120,
-  tags: '蓝牙,降噪,通勤',
-  imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80',
-})
-const result = ref('')
+const route = useRoute()
+const router = useRouter()
+const id = String(route.params.id || '')
+
+const form = ref<any>({ name: '', description: '', price: '', stock: 0, tags: '', imageUrl: '' })
 const errors = ref<string[]>([])
+const result = ref('')
 const uploading = ref(false)
 
+onMounted(async () => {
+  if (!id) return
+  const p = await getMerchantProduct(id)
+  form.value = {
+    name: p.name,
+    description: p.description,
+    price: p.price,
+    stock: p.stock,
+    tags: (p.tags || []).join(','),
+    imageUrl: p.image_urls?.[0] || p.image_urls || '',
+  }
+})
 
 async function submitProduct() {
   errors.value = []
@@ -43,27 +53,26 @@ async function submitProduct() {
 
   if (errors.value.length) return
 
-  try{
-    const response = await createMerchantProduct({
-        name: form.value.name,
-        description: form.value.description,
-        price: form.value.price,
-        stock: form.value.stock,
-        tags: form.value.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
-        image_urls: [form.value.imageUrl],
-    })
-    result.value = `${response.product_id} / ${response.status} / ${response.vector_index_status}`
-    alert("已上架！")
-  }catch{
-    alert("上架失败！")
-  }
-  
+  const response = await editMerchantProduct(id, {
+    name: form.value.name,
+    description: form.value.description,
+    price: form.value.price,
+    stock: form.value.stock,
+    tags: form.value.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
+    image_urls: [form.value.imageUrl],
+  })
+  result.value = '保存成功'
+  router.push({ name: 'merchant' })
 }
 
+
 function isImageUrl(url: string): Promise<boolean> {
+  
+  //测试环境，上线要注释
   if(url.startsWith("https://example.com/uploads/products/")){
     return Promise.resolve(true)
   }
+
   return new Promise((resolve) => {
     const img = new Image()
     img.onload = () => resolve(true)
@@ -92,12 +101,14 @@ async function onSelectImage(e: Event) {
   URL.revokeObjectURL(blobUrl)
 }
 
+
 function triggerFileInput() {
   const input = document.getElementById('image-input') as HTMLInputElement | null;
   input?.click();
 }
 
 </script>
+
 
 <template>
   <div class="page split-page">
@@ -140,7 +151,7 @@ function triggerFileInput() {
           </button>
           <button type="submit" class="black-button">
             <PackagePlus :size="18" />
-            <span>上架</span>
+            <span>编辑</span>
           </button>
         </div>
         <div class="form-errors" v-if="errors.length">
@@ -176,3 +187,4 @@ function triggerFileInput() {
     </aside>
   </div>
 </template>
+
