@@ -220,19 +220,25 @@ export async function uploadProductImage(file: File): Promise<{ url: string }> {
   return uploadProductImageResult.data
 }
 
-export async function listAdminUsers(): Promise<PageResponse<{ user_id: string; name: string; role: string; status: string }>> {
+export async function listAdminUsers(): Promise<PageResponse<{ user_id: string; username: string; role: string; status: string ;phone:string; created_at:string ; }>> {
   try {
     return await request('/admin/users')
   } catch {
-    return { items: [{ user_id: 'u10001', name: '测试商家', role: 'MERCHANT', status: 'ACTIVE' }], page: 1, size: 20, total: 1, has_next: false }
+    throw new Error("listAdminUsers")
   }
 }
 
 export async function updateUserStatus(userId: string, status: string) {
-  return request(`/admin/users/${userId}/status`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status }),
-  })
+  try{
+    return request(`/admin/users/${userId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    })
+  }
+  catch{
+    throw new Error('updateUserStatus')
+  }
+  
 }
 
 export async function getAdminOverview(): Promise<{
@@ -246,14 +252,7 @@ export async function getAdminOverview(): Promise<{
   try {
     return await request('/admin/metrics/overview')
   } catch {
-    return {
-      user_count: 2,
-      product_count: 3,
-      order_count: 1,
-      today_order_count: 1,
-      ai_service_status: 'UP',
-      vector_db_status: 'UP',
-    }
+    throw new Error("getAdminOverview")
   }
 }
 

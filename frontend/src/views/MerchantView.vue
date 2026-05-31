@@ -7,9 +7,15 @@ const loading = ref(false)
 
 async function load() {
   loading.value = true
-  const data = await listMerchantProducts()
-  products.value = data.items
-  loading.value = false
+  try{
+    const data = await listMerchantProducts()
+    products.value = data.items
+    loading.value = false
+  }
+  catch{
+    alert('无法取得数据！')
+  }
+  
 }
 
 onMounted(load)
