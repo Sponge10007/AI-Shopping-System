@@ -1,0 +1,104 @@
+Python AI 服务配置与启动
+======================
+
+一、进入项目目录
+
+
+二、创建并启用虚拟环境
+
+
+三、安装依赖
+------------
+
+PowerShell:
+
+python -m pip install --upgrade pip
+python -m pip install -r inform\requirements.txt
+
+
+四、配置 Python API 服务地址
+--------------------------
+
+PowerShell:
+
+$env:PY_API_HOST="127.0.0.1"
+$env:PY_API_PORT="9000"
+
+说明：
+
+1. Java 后端调用 Python 服务时，默认基础地址为：
+   http://127.0.0.1:9000
+2. 如果 Java 和 Python 不在同一台机器，请把 PY_API_HOST 设置为 Python 机器可被访问的网卡地址。
+
+
+五、配置 DeepSeek 对话模型
+------------------------
+
+PowerShell:
+
+$env:DEEPSEEK_API_KEY="你的 DeepSeek API Key"
+$env:DEEPSEEK_MODEL="deepseek-v4-flash"
+$env:DEEPSEEK_BASE_URL="https://api.deepseek.com"
+
+说明：
+
+1. DEEPSEEK_API_KEY 必填，否则 AI 助手对话接口无法初始化。
+2. DEEPSEEK_MODEL 可按实际账号可用模型调整。
+3. core/llmchat.py 使用 DeepSeek 的 OpenAI-compatible API。
+
+
+六、配置视觉搜索模型
+------------------
+视觉模型需要单独配置，请设置：
+PowerShell:
+
+$env:IMAGE_AI_API_KEY="你的视觉模型 API Key"
+$env:IMAGE_AI_MODEL="支持图片输入的模型名"
+$env:IMAGE_AI_BASE_URL="视觉模型 base_url"
+
+说明：
+
+1. IMAGE_AI_MODEL 必须支持图片输入。
+2. core/image_ai.py 会把图片传给视觉模型，提取关键词后调用向量搜索。
+
+
+七、配置 Java 商品详情回调接口
+----------------------------
+
+PowerShell:
+
+$env:JAVA_PRODUCT_SEARCH_URL="http://127.0.0.1:8080/product/searchById"
+
+说明：
+
+1. AI 对话工具在搜索到商品 ID 后，会调用该 Java 接口查询普通商品详情。
+2. Python 请求 Java 的 body 为：
+
+{
+  "id": "商品ID"
+}
+
+
+八、配置提示词
+----------------------------
+
+PowerShell:
+
+$env:PROMPT_FILE_PATH="prompt.txt"
+说明：
+
+1. PROMPT_FILE_PATH 可选，不设置时默认读取 prompt.txt。
+2. 如果 prompt.txt 不存在，core/llmchat.py 会使用内置系统提示词。
+
+九、启动 Python API 服务
+----------------------
+
+PowerShell:
+
+python -m api.py_api_server
+
+启动成功后会看到类似输出：
+
+Python API 服务已启动: http://127.0.0.1:9000
+健康检查: GET /health
+
