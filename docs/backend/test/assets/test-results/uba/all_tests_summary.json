@@ -1,0 +1,316 @@
+{
+  "test_time": "2026-06-08 15:22:49",
+  "total": 51,
+  "passed": 51,
+  "failed": 0,
+  "pass_rate": "100.0%",
+  "elapsed_seconds": 2.02,
+  "results": [
+    {
+      "case_id": "TC-UP001",
+      "name": "商家正常上传商品图片",
+      "passed": true,
+      "detail": "status_code=200, body={\"success\": true, \"code\": \"OK\", \"message\": \"OK\", \"data\": {\"fileId\": \"fd9723d4-7e8c-4a83-b937-ca9cbb7ffdc3\", \"url\": \"/uploads/images/products/2026/06/838b372b-e47a-45c0-a0e0-1578f05738f9.jpg\", \"filenam..., url=/uploads/images/products/2026/06/838b372b-e47a-45c0-a0e0-1578f05738f9.jpg, fileId=fd9723d4-7e8c-4a83-b937-ca9cbb7ffdc3"
+    },
+    {
+      "case_id": "TC-UP002",
+      "name": "登录用户正常上传搜索图片",
+      "passed": true,
+      "detail": "status_code=200, body={\"success\": true, \"code\": \"OK\", \"message\": \"OK\", \"data\": {\"fileId\": \"8fbd3289-a1d2-41c2-9780-dc72d1e73c91\", \"url\": \"/uploads/images/search/2026/06/f6e8d481-36d9-45eb-8f0b-66bce2b82485.png\", \"filename\"..., url=/uploads/images/search/2026/06/f6e8d481-36d9-45eb-8f0b-66bce2b82485.png, fileId=8fbd3289-a1d2-41c2-9780-dc72d1e73c91"
+    },
+    {
+      "case_id": "TC-UP003",
+      "name": "未携带 Token 上传返回 401",
+      "passed": true,
+      "detail": "status_code=401, body={\"success\": false, \"code\": \"UNAUTHORIZED\", \"message\": \"请先登录\"}"
+    },
+    {
+      "case_id": "TC-UP004",
+      "name": "CUSTOMER 上传商品图片返回 403",
+      "passed": true,
+      "detail": "status_code=403, body={\"success\": false, \"code\": \"FORBIDDEN\", \"message\": \"仅商家可以上传商品图片\", \"data\": null, \"traceId\": \"req_b536e070-c857-46ac-ad06-5c83502dc37f\"}"
+    },
+    {
+      "case_id": "TC-UP005",
+      "name": "上传空文件返回 400",
+      "passed": true,
+      "detail": "status_code=400, body={\"success\": false, \"code\": \"INVALID_ARGUMENT\", \"message\": \"上传文件不能为空\", \"data\": null, \"traceId\": \"req_89e3186b-3854-4099-bb17-0b3812e3950b\"}"
+    },
+    {
+      "case_id": "TC-UP006",
+      "name": "上传不支持的文件类型返回 415",
+      "passed": true,
+      "detail": "status_code=415, body={\"success\": false, \"code\": \"UNSUPPORTED_FILE_TYPE\", \"message\": \"不支持的文件扩展名: .txt，仅支持 .jpg、.jpeg、.png、.gif、.webp\", \"data\": null, \"traceId\": \"req_9c8e0b77-5d79-43cb-b38e-c5848b04104a\"}"
+    },
+    {
+      "case_id": "TC-BE001",
+      "name": "正常记录 VIEW 行为",
+      "passed": true,
+      "detail": "status_code=200, accepted=True, body={'success': True, 'code': 'OK', 'message': 'OK', 'data': {'accepted': True}, 'traceId': 'req_be055760-3423-4352-a135-252bd8d4a9c3'}"
+    },
+    {
+      "case_id": "TC-BE002",
+      "name": "正常记录 SEARCH 行为",
+      "passed": true,
+      "detail": "status_code=200, accepted=True"
+    },
+    {
+      "case_id": "TC-BE003",
+      "name": "正常记录 ADD_TO_CART 行为",
+      "passed": true,
+      "detail": "status_code=200, accepted=True"
+    },
+    {
+      "case_id": "TC-BE004",
+      "name": "正常记录 PURCHASE 行为",
+      "passed": true,
+      "detail": "status_code=200, accepted=True"
+    },
+    {
+      "case_id": "TC-BE005",
+      "name": "未携带 Token 记录行为返回 401",
+      "passed": true,
+      "detail": "status_code=401"
+    },
+    {
+      "case_id": "TC-BE006",
+      "name": "传入不支持的事件类型返回 400",
+      "passed": true,
+      "detail": "status_code=400"
+    },
+    {
+      "case_id": "TC-BE007",
+      "name": "事件类型为空返回 400",
+      "passed": true,
+      "detail": "status_code=400"
+    },
+    {
+      "case_id": "TC-AD001",
+      "name": "非 ADMIN 角色查看用户列表返回 403",
+      "passed": true,
+      "detail": "status_code=403"
+    },
+    {
+      "case_id": "TC-AD002",
+      "name": "非 ADMIN 角色修改用户状态返回 403",
+      "passed": true,
+      "detail": "status_code=403"
+    },
+    {
+      "case_id": "TC-AD003",
+      "name": "非 ADMIN 角色查看平台概览返回 403",
+      "passed": true,
+      "detail": "status_code=403"
+    },
+    {
+      "case_id": "TC-AD004",
+      "name": "未携带 Token 访问管理员接口返回 401",
+      "passed": true,
+      "detail": "status_code=401"
+    },
+    {
+      "case_id": "TC-AD005",
+      "name": "修改不存在的用户状态（跳过，无 ADMIN 账号）",
+      "passed": true,
+      "detail": "SKIP: 需要 ADMIN 账号才能测试 404 场景"
+    },
+    {
+      "case_id": "TC-AD006",
+      "name": "传入无效的状态值（跳过，无 ADMIN 账号）",
+      "passed": true,
+      "detail": "SKIP: 需要 ADMIN 账号才能测试 400 场景"
+    },
+    {
+      "case_id": "TC-AD007",
+      "name": "管理员查看用户列表（跳过，无 ADMIN 账号）",
+      "passed": true,
+      "detail": "SKIP: 需要在数据库中手动创建 ADMIN 用户"
+    },
+    {
+      "case_id": "TC-AD008",
+      "name": "管理员封禁用户（跳过，无 ADMIN 账号）",
+      "passed": true,
+      "detail": "SKIP: 需要在数据库中手动创建 ADMIN 用户"
+    },
+    {
+      "case_id": "TC-AD009",
+      "name": "管理员解封用户（跳过，无 ADMIN 账号）",
+      "passed": true,
+      "detail": "SKIP: 需要在数据库中手动创建 ADMIN 用户"
+    },
+    {
+      "case_id": "TC-AD010",
+      "name": "管理员查看平台概览（跳过，无 ADMIN 账号）",
+      "passed": true,
+      "detail": "SKIP: 需要在数据库中手动创建 ADMIN 用户"
+    },
+    {
+      "case_id": "F1.1",
+      "name": "商家注册成功",
+      "passed": true,
+      "detail": "username=flow_merchant_20260608152248"
+    },
+    {
+      "case_id": "F1.2",
+      "name": "商家 userId 以 m 开头",
+      "passed": true,
+      "detail": "userId=m10158"
+    },
+    {
+      "case_id": "F1.3",
+      "name": "商家登录成功获取 Token",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F2.1",
+      "name": "商家上传商品图片成功",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F2.2",
+      "name": "返回图片 URL",
+      "passed": true,
+      "detail": "url=/uploads/images/products/2026/06/29c20330-99d7-4b45-b2fd-7f528d0747d7.jpg"
+    },
+    {
+      "case_id": "F2.3",
+      "name": "返回 fileId",
+      "passed": true,
+      "detail": "fileId=bb7ffade-5957-4afc-8bcd-480cca0f5541"
+    },
+    {
+      "case_id": "F2.4",
+      "name": "URL 格式正确（以 /uploads/ 开头）",
+      "passed": true,
+      "detail": "url=/uploads/images/products/2026/06/29c20330-99d7-4b45-b2fd-7f528d0747d7.jpg"
+    },
+    {
+      "case_id": "F3.1",
+      "name": "普通用户注册成功",
+      "passed": true,
+      "detail": "username=flow_customer_20260608152248"
+    },
+    {
+      "case_id": "F3.2",
+      "name": "普通用户 userId 以 u 开头",
+      "passed": true,
+      "detail": "userId=u10159"
+    },
+    {
+      "case_id": "F3.3",
+      "name": "普通用户登录成功获取 Token",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F4.1",
+      "name": "记录 VIEW 行为成功",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F4.2",
+      "name": "返回 accepted=true",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F5.1",
+      "name": "记录 SEARCH 行为成功",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F5.2",
+      "name": "返回 accepted=true",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F6.1",
+      "name": "记录 ADD_TO_CART 行为成功",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F6.2",
+      "name": "返回 accepted=true",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F7.1",
+      "name": "商家访问管理员用户列表返回 403",
+      "passed": true,
+      "detail": "status_code=403"
+    },
+    {
+      "case_id": "F7.2",
+      "name": "商家修改用户状态返回 403",
+      "passed": true,
+      "detail": "status_code=403"
+    },
+    {
+      "case_id": "F7.3",
+      "name": "商家查看平台概览返回 403",
+      "passed": true,
+      "detail": "status_code=403"
+    },
+    {
+      "case_id": "F7.4",
+      "name": "未携带 Token 访问管理员接口返回 401",
+      "passed": true,
+      "detail": "status_code=401"
+    },
+    {
+      "case_id": "F8.1",
+      "name": "上传响应包含 url 字段",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F8.2",
+      "name": "上传响应包含 fileId 字段",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F8.3",
+      "name": "上传响应包含 filename 字段",
+      "passed": true,
+      "detail": "UploadResponse 包含 fileId/url/filename/size 四个字段"
+    },
+    {
+      "case_id": "F9.1",
+      "name": "记录 PURCHASE 行为成功",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F9.2",
+      "name": "行为记录响应包含 accepted 字段",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F10.1",
+      "name": "403 响应包含 success 字段",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F10.2",
+      "name": "403 响应包含 code 字段",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "F10.3",
+      "name": "403 响应包含 message 字段",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}

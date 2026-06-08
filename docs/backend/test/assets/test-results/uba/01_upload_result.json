@@ -1,0 +1,38 @@
+[
+  {
+    "case_id": "TC-UP001",
+    "name": "商家正常上传商品图片",
+    "passed": true,
+    "detail": "status_code=200, body={\"success\": true, \"code\": \"OK\", \"message\": \"OK\", \"data\": {\"fileId\": \"fd9723d4-7e8c-4a83-b937-ca9cbb7ffdc3\", \"url\": \"/uploads/images/products/2026/06/838b372b-e47a-45c0-a0e0-1578f05738f9.jpg\", \"filenam..., url=/uploads/images/products/2026/06/838b372b-e47a-45c0-a0e0-1578f05738f9.jpg, fileId=fd9723d4-7e8c-4a83-b937-ca9cbb7ffdc3"
+  },
+  {
+    "case_id": "TC-UP002",
+    "name": "登录用户正常上传搜索图片",
+    "passed": true,
+    "detail": "status_code=200, body={\"success\": true, \"code\": \"OK\", \"message\": \"OK\", \"data\": {\"fileId\": \"8fbd3289-a1d2-41c2-9780-dc72d1e73c91\", \"url\": \"/uploads/images/search/2026/06/f6e8d481-36d9-45eb-8f0b-66bce2b82485.png\", \"filename\"..., url=/uploads/images/search/2026/06/f6e8d481-36d9-45eb-8f0b-66bce2b82485.png, fileId=8fbd3289-a1d2-41c2-9780-dc72d1e73c91"
+  },
+  {
+    "case_id": "TC-UP003",
+    "name": "未携带 Token 上传返回 401",
+    "passed": true,
+    "detail": "status_code=401, body={\"success\": false, \"code\": \"UNAUTHORIZED\", \"message\": \"请先登录\"}"
+  },
+  {
+    "case_id": "TC-UP004",
+    "name": "CUSTOMER 上传商品图片返回 403",
+    "passed": true,
+    "detail": "status_code=403, body={\"success\": false, \"code\": \"FORBIDDEN\", \"message\": \"仅商家可以上传商品图片\", \"data\": null, \"traceId\": \"req_b536e070-c857-46ac-ad06-5c83502dc37f\"}"
+  },
+  {
+    "case_id": "TC-UP005",
+    "name": "上传空文件返回 400",
+    "passed": true,
+    "detail": "status_code=400, body={\"success\": false, \"code\": \"INVALID_ARGUMENT\", \"message\": \"上传文件不能为空\", \"data\": null, \"traceId\": \"req_89e3186b-3854-4099-bb17-0b3812e3950b\"}"
+  },
+  {
+    "case_id": "TC-UP006",
+    "name": "上传不支持的文件类型返回 415",
+    "passed": true,
+    "detail": "status_code=415, body={\"success\": false, \"code\": \"UNSUPPORTED_FILE_TYPE\", \"message\": \"不支持的文件扩展名: .txt，仅支持 .jpg、.jpeg、.png、.gif、.webp\", \"data\": null, \"traceId\": \"req_9c8e0b77-5d79-43cb-b38e-c5848b04104a\"}"
+  }
+]

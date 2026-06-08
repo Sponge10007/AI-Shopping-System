@@ -1,0 +1,39 @@
+{
+    "Passed":  6,
+    "Timestamp":  "2026-06-07 11:34:37",
+    "Total":  6,
+    "Results":  [
+                    {
+                        "Name":  "TC-L001: 使用用户名正常登录",
+                        "Status":  "PASS",
+                        "Detail":  "success=True"
+                    },
+                    {
+                        "Name":  "TC-L002: 使用手机号正常登录",
+                        "Status":  "PASS",
+                        "Detail":  "success=True"
+                    },
+                    {
+                        "Name":  "TC-L003: 密码错误登录",
+                        "Status":  "PASS",
+                        "Detail":  "success=False, code=UNAUTHORIZED"
+                    },
+                    {
+                        "Name":  "TC-L004: 用户不存在登录",
+                        "Status":  "PASS",
+                        "Detail":  "success=False, code=RESOURCE_NOT_FOUND"
+                    },
+                    {
+                        "Name":  "TC-L005: 缺少必填字段（无 account）",
+                        "Status":  "PASS",
+                        "Detail":  "success=False, code=INVALID_ARGUMENT"
+                    },
+                    {
+                        "Name":  "TC-L006: 验证 Token 格式和响应结构",
+                        "Status":  "PASS",
+                        "Detail":  "所有字段完整，JWT 格式正确"
+                    }
+                ],
+    "Failed":  0,
+    "TestSuite":  "登录接口测试"
+}

@@ -1,0 +1,114 @@
+{
+  "TestSuite": "商品更新/下架/补货接口测试",
+  "Timestamp": "2026-06-07 15:37:47",
+  "Total": 21,
+  "Passed": 21,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "准备: 商家A注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "准备: 商家B注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "准备: 商家A登录成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "准备: 商家B登录成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PU001: 更新名称成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PU001: 更新后名称正确",
+      "Status": "PASS",
+      "Detail": "name=已更新名称_20260607153746"
+    },
+    {
+      "Name": "TC-PU002: 更新价格成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PU003: 更新标签和图片成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PU004: 更新不存在的商品返回 404",
+      "Status": "PASS",
+      "Detail": "statusCode=404"
+    },
+    {
+      "Name": "TC-PU005: 其他商家无权更新返回 403",
+      "Status": "PASS",
+      "Detail": "statusCode=403"
+    },
+    {
+      "Name": "TC-PO001: 下架商品成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PO001: 下架后 status=OFF_SALE",
+      "Status": "PASS",
+      "Detail": "status=OFF_SALE"
+    },
+    {
+      "Name": "TC-PO001: 返回 vector_index_status",
+      "Status": "PASS",
+      "Detail": "vector_index_status=DELETE_PENDING"
+    },
+    {
+      "Name": "TC-PO002: 下架已下架的商品（幂等）成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PO003: 其他商家无权下架返回 403",
+      "Status": "PASS",
+      "Detail": "statusCode=403"
+    },
+    {
+      "Name": "TC-PR001: 补货成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PR001: 补货响应返回 stock",
+      "Status": "PASS",
+      "Detail": "stock=100"
+    },
+    {
+      "Name": "TC-PR001: 返回 product_id",
+      "Status": "PASS",
+      "Detail": "product_id=p10019"
+    },
+    {
+      "Name": "TC-PR001: 数据库库存已增加",
+      "Status": "PASS",
+      "Detail": "before=100, after=150"
+    },
+    {
+      "Name": "TC-PR002: 补货数量为0返回 400",
+      "Status": "PASS",
+      "Detail": "statusCode=400"
+    },
+    {
+      "Name": "TC-PR003: 其他商家无权补货返回 403",
+      "Status": "PASS",
+      "Detail": "statusCode=403"
+    }
+  ]
+}

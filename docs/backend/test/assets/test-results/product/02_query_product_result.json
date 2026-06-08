@@ -1,0 +1,109 @@
+{
+  "TestSuite": "商品查询接口测试",
+  "Timestamp": "2026-06-07 15:37:46",
+  "Total": 20,
+  "Passed": 20,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "准备: 商家注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "准备: 商家登录成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PQ001: 查询成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PQ001: 返回 total",
+      "Status": "PASS",
+      "Detail": "total=14"
+    },
+    {
+      "Name": "TC-PQ001: 返回 page",
+      "Status": "PASS",
+      "Detail": "page=1"
+    },
+    {
+      "Name": "TC-PQ001: 返回 items",
+      "Status": "PASS",
+      "Detail": "count=14"
+    },
+    {
+      "Name": "TC-PQ002: 分类筛选成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PQ003: 排序查询成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PQ004: 查询详情成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PQ004: 返回 name",
+      "Status": "PASS",
+      "Detail": "name=查询测试耳机_20260607153746"
+    },
+    {
+      "Name": "TC-PQ004: 返回 category_id",
+      "Status": "PASS",
+      "Detail": "category_id=c_headphone"
+    },
+    {
+      "Name": "TC-PQ004: 返回 price",
+      "Status": "PASS",
+      "Detail": "price=199.99"
+    },
+    {
+      "Name": "TC-PQ004: 返回 stock",
+      "Status": "PASS",
+      "Detail": "stock=100"
+    },
+    {
+      "Name": "TC-PQ004: 返回 status",
+      "Status": "PASS",
+      "Detail": "status=ON_SALE"
+    },
+    {
+      "Name": "TC-PQ005: 返回 404",
+      "Status": "PASS",
+      "Detail": "statusCode=404"
+    },
+    {
+      "Name": "TC-PQ006: 商家查询成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PQ006: 返回的商品数 >= 3",
+      "Status": "PASS",
+      "Detail": "count=3"
+    },
+    {
+      "Name": "TC-PQ007: 状态筛选成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PQ008: 分页查询成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PQ008: 返回条数 <= 2",
+      "Status": "PASS",
+      "Detail": "count=2"
+    }
+  ]
+}

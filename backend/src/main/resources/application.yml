@@ -4,8 +4,6 @@ server:
 spring:
   application:
     name: ai-shopping-backend
-  jackson:
-    property-naming-strategy: SNAKE_CASE
   datasource:
     url: jdbc:postgresql://localhost:5432/ai_shop
     username: ai_shop
@@ -26,6 +24,11 @@ management:
         include: health,info
 
 app:
+  jwt:
+    access-token-secret: "aishop-access-token-secret-key-32chars!!"
+    access-token-expiration-sec: 7200
+    refresh-token-secret: "aishop-refresh-token-secret-key-32chars!!"
+    refresh-token-expiration-sec: 604800
   internal-token: dev-internal-token
   ai-service:
     base-url: http://localhost:8001/internal/v1/ai

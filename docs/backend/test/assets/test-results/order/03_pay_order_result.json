@@ -1,0 +1,94 @@
+{
+  "TestSuite": "订单支付接口测试",
+  "Timestamp": "2026-06-08 11:50:26",
+  "Total": 17,
+  "Passed": 17,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "准备: 商家注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "准备: 买家A注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "准备: 买家B注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-OP001: 支付成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "TC-OP001: 返回 orderId",
+      "Status": "PASS",
+      "Detail": "orderId=o10032"
+    },
+    {
+      "Name": "TC-OP001: 返回 paymentId",
+      "Status": "PASS",
+      "Detail": "paymentId=pay10008"
+    },
+    {
+      "Name": "TC-OP001: paymentId 以 pay 开头",
+      "Status": "PASS",
+      "Detail": "paymentId=pay10008"
+    },
+    {
+      "Name": "TC-OP001: 返回 status=PAID",
+      "Status": "PASS",
+      "Detail": "status=PAID"
+    },
+    {
+      "Name": "TC-OP001: 返回 amount",
+      "Status": "PASS",
+      "Detail": "amount=100.00"
+    },
+    {
+      "Name": "TC-OP001: 支付后订单状态为 PAID",
+      "Status": "PASS",
+      "Detail": "status=PAID"
+    },
+    {
+      "Name": "TC-OP002: 重复支付返回 409",
+      "Status": "PASS",
+      "Detail": "status_code=409"
+    },
+    {
+      "Name": "TC-OP003: 返回 404",
+      "Status": "PASS",
+      "Detail": "status_code=404"
+    },
+    {
+      "Name": "TC-OP004: 返回 403",
+      "Status": "PASS",
+      "Detail": "status_code=403"
+    },
+    {
+      "Name": "TC-OP005: 返回 401",
+      "Status": "PASS",
+      "Detail": "status_code=401"
+    },
+    {
+      "Name": "TC-OP006: 指定支付方式成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "TC-OP006: 返回 status=PAID",
+      "Status": "PASS",
+      "Detail": "status=PAID"
+    },
+    {
+      "Name": "TC-OP006: 返回 paymentId",
+      "Status": "PASS",
+      "Detail": "paymentId=pay10009"
+    }
+  ]
+}

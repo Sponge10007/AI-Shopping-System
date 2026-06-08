@@ -1,0 +1,44 @@
+[
+  {
+    "case_id": "TC-BE001",
+    "name": "正常记录 VIEW 行为",
+    "passed": true,
+    "detail": "status_code=200, accepted=True, body={'success': True, 'code': 'OK', 'message': 'OK', 'data': {'accepted': True}, 'traceId': 'req_be055760-3423-4352-a135-252bd8d4a9c3'}"
+  },
+  {
+    "case_id": "TC-BE002",
+    "name": "正常记录 SEARCH 行为",
+    "passed": true,
+    "detail": "status_code=200, accepted=True"
+  },
+  {
+    "case_id": "TC-BE003",
+    "name": "正常记录 ADD_TO_CART 行为",
+    "passed": true,
+    "detail": "status_code=200, accepted=True"
+  },
+  {
+    "case_id": "TC-BE004",
+    "name": "正常记录 PURCHASE 行为",
+    "passed": true,
+    "detail": "status_code=200, accepted=True"
+  },
+  {
+    "case_id": "TC-BE005",
+    "name": "未携带 Token 记录行为返回 401",
+    "passed": true,
+    "detail": "status_code=401"
+  },
+  {
+    "case_id": "TC-BE006",
+    "name": "传入不支持的事件类型返回 400",
+    "passed": true,
+    "detail": "status_code=400"
+  },
+  {
+    "case_id": "TC-BE007",
+    "name": "事件类型为空返回 400",
+    "passed": true,
+    "detail": "status_code=400"
+  }
+]

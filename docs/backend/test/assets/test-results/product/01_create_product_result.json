@@ -1,0 +1,84 @@
+{
+  "TestSuite": "商品创建接口测试",
+  "Timestamp": "2026-06-07 15:37:45",
+  "Total": 15,
+  "Passed": 15,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "准备: 商家注册成功",
+      "Status": "PASS",
+      "Detail": "username=create_test_20260607153745"
+    },
+    {
+      "Name": "准备: 商家登录成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PC001: 创建成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PC001: 返回 product_id",
+      "Status": "PASS",
+      "Detail": "product_id=p10012"
+    },
+    {
+      "Name": "TC-PC001: product_id 以 p 开头",
+      "Status": "PASS",
+      "Detail": "product_id=p10012"
+    },
+    {
+      "Name": "TC-PC001: 返回 status=ON_SALE",
+      "Status": "PASS",
+      "Detail": "status=ON_SALE"
+    },
+    {
+      "Name": "TC-PC001: 返回 vector_index_status",
+      "Status": "PASS",
+      "Detail": "vector_index_status=PENDING"
+    },
+    {
+      "Name": "TC-PC002: 创建成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-PC002: 返回 product_id",
+      "Status": "PASS",
+      "Detail": "product_id=p10013"
+    },
+    {
+      "Name": "TC-PC003: 返回 400",
+      "Status": "PASS",
+      "Detail": "statusCode=400"
+    },
+    {
+      "Name": "TC-PC003: success=false",
+      "Status": "PASS",
+      "Detail": "success=False"
+    },
+    {
+      "Name": "TC-PC004: 返回 400",
+      "Status": "PASS",
+      "Detail": "statusCode=400"
+    },
+    {
+      "Name": "TC-PC005: 返回 400",
+      "Status": "PASS",
+      "Detail": "statusCode=400"
+    },
+    {
+      "Name": "TC-PC006: 返回 401",
+      "Status": "PASS",
+      "Detail": "statusCode=401"
+    },
+    {
+      "Name": "TC-PC007: 返回 403",
+      "Status": "PASS",
+      "Detail": "statusCode=403"
+    }
+  ]
+}

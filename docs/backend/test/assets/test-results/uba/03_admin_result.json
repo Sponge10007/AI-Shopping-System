@@ -1,0 +1,62 @@
+[
+  {
+    "case_id": "TC-AD001",
+    "name": "非 ADMIN 角色查看用户列表返回 403",
+    "passed": true,
+    "detail": "status_code=403"
+  },
+  {
+    "case_id": "TC-AD002",
+    "name": "非 ADMIN 角色修改用户状态返回 403",
+    "passed": true,
+    "detail": "status_code=403"
+  },
+  {
+    "case_id": "TC-AD003",
+    "name": "非 ADMIN 角色查看平台概览返回 403",
+    "passed": true,
+    "detail": "status_code=403"
+  },
+  {
+    "case_id": "TC-AD004",
+    "name": "未携带 Token 访问管理员接口返回 401",
+    "passed": true,
+    "detail": "status_code=401"
+  },
+  {
+    "case_id": "TC-AD005",
+    "name": "修改不存在的用户状态（跳过，无 ADMIN 账号）",
+    "passed": true,
+    "detail": "SKIP: 需要 ADMIN 账号才能测试 404 场景"
+  },
+  {
+    "case_id": "TC-AD006",
+    "name": "传入无效的状态值（跳过，无 ADMIN 账号）",
+    "passed": true,
+    "detail": "SKIP: 需要 ADMIN 账号才能测试 400 场景"
+  },
+  {
+    "case_id": "TC-AD007",
+    "name": "管理员查看用户列表（跳过，无 ADMIN 账号）",
+    "passed": true,
+    "detail": "SKIP: 需要在数据库中手动创建 ADMIN 用户"
+  },
+  {
+    "case_id": "TC-AD008",
+    "name": "管理员封禁用户（跳过，无 ADMIN 账号）",
+    "passed": true,
+    "detail": "SKIP: 需要在数据库中手动创建 ADMIN 用户"
+  },
+  {
+    "case_id": "TC-AD009",
+    "name": "管理员解封用户（跳过，无 ADMIN 账号）",
+    "passed": true,
+    "detail": "SKIP: 需要在数据库中手动创建 ADMIN 用户"
+  },
+  {
+    "case_id": "TC-AD010",
+    "name": "管理员查看平台概览（跳过，无 ADMIN 账号）",
+    "passed": true,
+    "detail": "SKIP: 需要在数据库中手动创建 ADMIN 用户"
+  }
+]

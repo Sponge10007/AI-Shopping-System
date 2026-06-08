@@ -1,0 +1,334 @@
+{
+  "TestSuite": "商品模块完整业务流程测试",
+  "Timestamp": "2026-06-07 15:37:49",
+  "Total": 65,
+  "Passed": 65,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "F1.1 MERCHANT 注册成功",
+      "Status": "PASS",
+      "Detail": "username=flow_merchant_20260607153747"
+    },
+    {
+      "Name": "F1.2 返回 userId",
+      "Status": "PASS",
+      "Detail": "userId=m10013"
+    },
+    {
+      "Name": "F1.3 userId 以 m 开头",
+      "Status": "PASS",
+      "Detail": "userId=m10013"
+    },
+    {
+      "Name": "F1.4 商家登录成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F1.5 获取到 Token",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F2.1 创建耳机商品成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F2.2 返回 product_id",
+      "Status": "PASS",
+      "Detail": "product_id=p10020"
+    },
+    {
+      "Name": "F2.3 product_id 以 p 开头",
+      "Status": "PASS",
+      "Detail": "product_id=p10020"
+    },
+    {
+      "Name": "F2.4 返回 status=ON_SALE",
+      "Status": "PASS",
+      "Detail": "status=ON_SALE"
+    },
+    {
+      "Name": "F2.5 创建手机商品成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F2.6 创建电脑商品成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F3.1 公开查询在售商品列表成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F3.2 返回分页信息",
+      "Status": "PASS",
+      "Detail": "total=19, page=1"
+    },
+    {
+      "Name": "F3.3 返回商品列表",
+      "Status": "PASS",
+      "Detail": "count=19"
+    },
+    {
+      "Name": "F3.4 按分类筛选耳机成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F3.5 按价格升序排列成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F3.6 分页查询成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F4.1 查询商品详情成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F4.2 返回商品名称",
+      "Status": "PASS",
+      "Detail": "name=流程测试耳机_20260607153747"
+    },
+    {
+      "Name": "F4.3 返回商品描述",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F4.4 返回分类信息",
+      "Status": "PASS",
+      "Detail": "category_id=c_headphone"
+    },
+    {
+      "Name": "F4.5 返回分类名称",
+      "Status": "PASS",
+      "Detail": "category_name=耳机"
+    },
+    {
+      "Name": "F4.6 返回价格",
+      "Status": "PASS",
+      "Detail": "price=299.00"
+    },
+    {
+      "Name": "F4.7 返回库存",
+      "Status": "PASS",
+      "Detail": "stock=200"
+    },
+    {
+      "Name": "F4.8 返回销量",
+      "Status": "PASS",
+      "Detail": "sales=0"
+    },
+    {
+      "Name": "F4.9 返回评分",
+      "Status": "PASS",
+      "Detail": "rating=0.0"
+    },
+    {
+      "Name": "F4.10 返回状态 ON_SALE",
+      "Status": "PASS",
+      "Detail": "status=ON_SALE"
+    },
+    {
+      "Name": "F4.11 返回标签",
+      "Status": "PASS",
+      "Detail": "tags=['蓝牙', '降噪']"
+    },
+    {
+      "Name": "F4.12 返回图片列表",
+      "Status": "PASS",
+      "Detail": "imageCount=2"
+    },
+    {
+      "Name": "F4.13 返回 detail_url",
+      "Status": "PASS",
+      "Detail": "detail_url=/api/v1/products/p10020"
+    },
+    {
+      "Name": "F4.14 返回 created_at",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F4.15 返回 updated_at",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F4.16 查询不存在的商品返回 404",
+      "Status": "PASS",
+      "Detail": "statusCode=404"
+    },
+    {
+      "Name": "F5.1 商家查询自己的商品成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F5.2 返回的商品数 >= 3",
+      "Status": "PASS",
+      "Detail": "count=3"
+    },
+    {
+      "Name": "F5.3 商家按状态筛选成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F6.1 更新商品名称成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F6.2 更新后名称正确",
+      "Status": "PASS",
+      "Detail": "name=已更新名称_流程测试耳机_20260607153747"
+    },
+    {
+      "Name": "F6.3 更新商品价格成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F6.4 更新后价格正确",
+      "Status": "PASS",
+      "Detail": "price=199.0"
+    },
+    {
+      "Name": "F6.5 PATCH 语义：描述未被覆盖",
+      "Status": "PASS",
+      "Detail": "desc=高品质降噪蓝牙耳机"
+    },
+    {
+      "Name": "F6.6 PATCH 语义：分类未被覆盖",
+      "Status": "PASS",
+      "Detail": "category_id=c_headphone"
+    },
+    {
+      "Name": "F6.7 PATCH 语义：库存未被覆盖",
+      "Status": "PASS",
+      "Detail": "stock=200"
+    },
+    {
+      "Name": "F7.1 补货成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F7.2 补货响应返回 stock",
+      "Status": "PASS",
+      "Detail": "stock=30"
+    },
+    {
+      "Name": "F7.3 返回 product_id",
+      "Status": "PASS",
+      "Detail": "product_id=p10022"
+    },
+    {
+      "Name": "F7.2b 数据库库存已增加（补货30）",
+      "Status": "PASS",
+      "Detail": "before=30, after=60"
+    },
+    {
+      "Name": "F7.4 再次补货成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F7.5 再次补货响应返回 stock",
+      "Status": "PASS",
+      "Detail": "stock=60"
+    },
+    {
+      "Name": "F7.5b 数据库库存已增加（再补货20）",
+      "Status": "PASS",
+      "Detail": "expected=80, actual=80"
+    },
+    {
+      "Name": "F8.1 下架商品成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F8.2 下架后 status=OFF_SALE",
+      "Status": "PASS",
+      "Detail": "status=OFF_SALE"
+    },
+    {
+      "Name": "F8.3 返回 vector_index_status",
+      "Status": "PASS",
+      "Detail": "vector_index_status=DELETE_PENDING"
+    },
+    {
+      "Name": "F8.4 下架后商品详情中 status=OFF_SALE",
+      "Status": "PASS",
+      "Detail": "status=OFF_SALE"
+    },
+    {
+      "Name": "F9.1 其他商家注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F9.2 其他商家无权更新（403）",
+      "Status": "PASS",
+      "Detail": "statusCode=403"
+    },
+    {
+      "Name": "F9.3 其他商家无权下架（403）",
+      "Status": "PASS",
+      "Detail": "statusCode=403"
+    },
+    {
+      "Name": "F9.4 其他商家无权补货（403）",
+      "Status": "PASS",
+      "Detail": "statusCode=403"
+    },
+    {
+      "Name": "F9.5 未携带 Token 访问商家接口（401）",
+      "Status": "PASS",
+      "Detail": "statusCode=401"
+    },
+    {
+      "Name": "F10.1 product_id 格式为 p+数字",
+      "Status": "PASS",
+      "Detail": "product_id=p10020"
+    },
+    {
+      "Name": "F10.2 创建响应包含 product_id",
+      "Status": "PASS",
+      "Detail": "product_id=p10020"
+    },
+    {
+      "Name": "F10.3 创建响应包含 status",
+      "Status": "PASS",
+      "Detail": "status=ON_SALE"
+    },
+    {
+      "Name": "F10.4 创建响应包含 vector_index_status",
+      "Status": "PASS",
+      "Detail": "vector_index_status=PENDING"
+    },
+    {
+      "Name": "F10.5 补货响应包含 product_id",
+      "Status": "PASS",
+      "Detail": "product_id=p10022"
+    },
+    {
+      "Name": "F10.6 补货响应包含 stock",
+      "Status": "PASS",
+      "Detail": "stock=30"
+    }
+  ]
+}

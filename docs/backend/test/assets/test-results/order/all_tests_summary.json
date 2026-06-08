@@ -1,0 +1,70 @@
+{
+  "TestSuite": "订单模块全量测试",
+  "EndTime": "2026-06-07 18:30:05",
+  "Total": 127,
+  "Passed": 127,
+  "Failed": 0,
+  "PassRate": 100.0,
+  "Details": [
+    {
+      "name": "订单创建接口测试",
+      "status": "PASS",
+      "total": 20,
+      "passed": 20,
+      "failed": 0,
+      "elapsed": 0.95,
+      "result": {
+        "TestSuite": "订单创建接口测试",
+        "Timestamp": "2026-06-07 18:30:01",
+        "Total": 20,
+        "Passed": 20,
+        "Failed": 0
+      }
+    },
+    {
+      "name": "订单查询接口测试",
+      "status": "PASS",
+      "total": 25,
+      "passed": 25,
+      "failed": 0,
+      "elapsed": 0.88,
+      "result": {
+        "TestSuite": "订单查询接口测试",
+        "Timestamp": "2026-06-07 18:30:02",
+        "Total": 25,
+        "Passed": 25,
+        "Failed": 0
+      }
+    },
+    {
+      "name": "订单支付接口测试",
+      "status": "PASS",
+      "total": 18,
+      "passed": 18,
+      "failed": 0,
+      "elapsed": 0.92,
+      "result": {
+        "TestSuite": "订单支付接口测试",
+        "Timestamp": "2026-06-07 18:30:03",
+        "Total": 18,
+        "Passed": 18,
+        "Failed": 0
+      }
+    },
+    {
+      "name": "订单模块完整业务流程测试",
+      "status": "PASS",
+      "total": 64,
+      "passed": 64,
+      "failed": 0,
+      "elapsed": 1.45,
+      "result": {
+        "TestSuite": "订单模块完整业务流程测试",
+        "Timestamp": "2026-06-07 18:30:05",
+        "Total": 64,
+        "Passed": 64,
+        "Failed": 0
+      }
+    }
+  ]
+}

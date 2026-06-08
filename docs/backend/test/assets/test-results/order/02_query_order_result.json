@@ -1,0 +1,124 @@
+{
+  "TestSuite": "订单查询接口测试",
+  "Timestamp": "2026-06-08 11:50:24",
+  "Total": 23,
+  "Passed": 23,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "准备: 商家注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "准备: 买家A注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "准备: 买家B注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-OQ001: 查询成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "TC-OQ001: 返回 items",
+      "Status": "PASS",
+      "Detail": "items=[{'orderId': 'o10031', 'userId': 'u10076', 'status': 'CREATED', 'totalAmount': '100.00', 'items': [{'productId': 'p10031', 'name': '查询测试商品_20260608115023', 'unitPrice': '50.00', 'quantity': 2}], 'receiver': {'name': '买家A_收货人', 'phone': '13800138001', 'address': '买家A地址2'}, 'createdAt': '2026-06-08T03:50:24.530809Z'}, {'orderId': 'o10030', 'userId': 'u10076', 'status': 'CREATED', 'totalAmount': '50.00', 'items': [{'productId': 'p10031', 'name': '查询测试商品_20260608115023', 'unitPrice': '50.00', 'quantity': 1}], 'receiver': {'name': '买家A_收货人', 'phone': '13800138001', 'address': '买家A地址1'}, 'createdAt': '2026-06-08T03:50:24.510497Z'}]"
+    },
+    {
+      "Name": "TC-OQ001: 返回 page",
+      "Status": "PASS",
+      "Detail": "page=1"
+    },
+    {
+      "Name": "TC-OQ001: 返回 total",
+      "Status": "PASS",
+      "Detail": "total=2"
+    },
+    {
+      "Name": "TC-OQ001: 订单数 >= 2",
+      "Status": "PASS",
+      "Detail": "count=2"
+    },
+    {
+      "Name": "TC-OQ002: 按状态筛选成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "TC-OQ002: 所有订单状态为 CREATED",
+      "Status": "PASS",
+      "Detail": "items_status=['CREATED', 'CREATED']"
+    },
+    {
+      "Name": "TC-OQ003: 查询详情成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "TC-OQ003: 返回 orderId",
+      "Status": "PASS",
+      "Detail": "orderId=o10030"
+    },
+    {
+      "Name": "TC-OQ003: 返回 status",
+      "Status": "PASS",
+      "Detail": "status=CREATED"
+    },
+    {
+      "Name": "TC-OQ003: 返回 totalAmount",
+      "Status": "PASS",
+      "Detail": "totalAmount=50.00"
+    },
+    {
+      "Name": "TC-OQ003: 返回 items",
+      "Status": "PASS",
+      "Detail": "items=[{'productId': 'p10031', 'name': '查询测试商品_20260608115023', 'unitPrice': '50.00', 'quantity': 1}]"
+    },
+    {
+      "Name": "TC-OQ003: 返回 receiver",
+      "Status": "PASS",
+      "Detail": "receiver={'name': '买家A_收货人', 'phone': '13800138001', 'address': '买家A地址1'}"
+    },
+    {
+      "Name": "TC-OQ003: 返回 createdAt",
+      "Status": "PASS",
+      "Detail": "createdAt=2026-06-08T03:50:24.510497Z"
+    },
+    {
+      "Name": "TC-OQ003: 收货人姓名",
+      "Status": "PASS",
+      "Detail": "name=买家A_收货人"
+    },
+    {
+      "Name": "TC-OQ003: 收货人电话",
+      "Status": "PASS",
+      "Detail": "phone=13800138001"
+    },
+    {
+      "Name": "TC-OQ003: 收货地址",
+      "Status": "PASS",
+      "Detail": "address=买家A地址1"
+    },
+    {
+      "Name": "TC-OQ004: 返回 404",
+      "Status": "PASS",
+      "Detail": "status_code=404"
+    },
+    {
+      "Name": "TC-OQ005: 返回 403",
+      "Status": "PASS",
+      "Detail": "status_code=403"
+    },
+    {
+      "Name": "TC-OQ006: 返回 401",
+      "Status": "PASS",
+      "Detail": "status_code=401"
+    }
+  ]
+}
