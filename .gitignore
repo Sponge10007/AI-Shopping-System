@@ -26,3 +26,7 @@ ai-service/.pytest_cache/
 storage/
 uploads/
 
+#own-local-test
+.vscode/
+mytest/
+message.txt
