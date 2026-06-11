@@ -63,19 +63,13 @@ class llmChat:
 
         # 外部商品详情查询函数：输入商品 id，返回包含该商品所有信息的字符串。
         self.search_function: Optional[Callable[[str], str]] = None
-        self.label_db = LabelDB()
+        # LabelDB 会加载 Hugging Face embedding 模型，网络不可用或模型未缓存时
+        # 可能初始化失败。聊天本身不应因此不可用，所以只在商品搜索工具真正被
+        # 调用时再懒加载。
+        self.label_db: Optional[LabelDB] = None
 
         self.tools = self._build_tools()
         self.tool_map = {tool.name: tool for tool in self.tools}
-        # DeepSeek API 兼容 OpenAI ChatCompletions 协议，因此可以继续使用
-        # LangChain 的 ChatOpenAI 适配器；关键区别是 base_url 指向 DeepSeek。
-        self.llm = ChatOpenAI(
-            api_key=api_key,
-            base_url=base_url,
-            model=model,
-            temperature=0.2,
-        )
-        self.llm_with_tools = self.llm.bind_tools(self.tools)
         self.graph = self._build_graph()
 
     def set_search_function(
@@ -169,11 +163,17 @@ class llmChat:
         """
 
         limit = max(1, min(int(max_results), 3))
-        product_ids = self.label_db.prod_search(
-            query=query,
-            distance_threshold=distance_threshold,
-            limit=recall_limit,
-        )
+        # 模型有时会传入过严的 distance_threshold，导致手动搜索能命中、
+        # 工具调用却返回空。这里做一层渐进放宽，课程原型阶段优先保证召回。
+        product_ids = []
+        for threshold in self._relaxed_thresholds(distance_threshold):
+            product_ids = self._get_label_db().prod_search(
+                query=query,
+                distance_threshold=threshold,
+                limit=recall_limit,
+            )
+            if product_ids:
+                break
 
         product_infos = []
         for product_id in product_ids[:limit]:
@@ -181,6 +181,24 @@ class llmChat:
             if detail:
                 product_infos.append(detail)
         return product_infos
+
+    def _relaxed_thresholds(self, distance_threshold: float) -> List[float]:
+        """生成保序去重的放宽阈值列表。"""
+
+        thresholds = [self._safe_float(distance_threshold, 0.9), 0.9, 1.5, 2.0]
+        result = []
+        for threshold in thresholds:
+            if threshold not in result:
+                result.append(threshold)
+        return result
+
+    def _safe_float(self, value: Any, default: float) -> float:
+        """把工具参数安全转成浮点数。"""
+
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
 
     def _collect_media_from_product_infos(
         self,
@@ -218,7 +236,7 @@ class llmChat:
     def search_products(
         self,
         query: str,
-        distance_threshold: float = 0.5,
+        distance_threshold: float = 0.9,
         max_results: int = 3,
         recall_limit: int = 50,
     ) -> List[str]:
@@ -240,7 +258,7 @@ class llmChat:
 
         def product_search(
             query: str,
-            distance_threshold: float = 0.5,
+            distance_threshold: float = 0.9,
             max_results: int = 3,
             recall_limit: int = 50,
         ) -> str:
@@ -282,8 +300,30 @@ class llmChat:
     def _call_model(self, state: ChatState) -> ChatState:
         """模型节点：让大模型基于历史消息决定直接回答或调用工具。"""
 
-        response = self.llm_with_tools.invoke(state["messages"])
+        # ChatOpenAI 底层使用 httpx/openai client。部分环境中长时间复用后会出现
+        # "Cannot send a request, as the client has been closed."，因此这里为每次
+        # 模型调用创建新的轻量适配器，避免复用已关闭的 HTTP client。
+        llm_with_tools = self._new_llm_with_tools()
+        response = llm_with_tools.invoke(state["messages"])
         return {"messages": [*state["messages"], response]}
+
+    def _new_llm_with_tools(self):
+        """创建一次性模型调用对象，避免复用被关闭的底层 HTTP client。"""
+
+        llm = ChatOpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+            model=self.model,
+            temperature=0.2,
+        )
+        return llm.bind_tools(self.tools)
+
+    def _get_label_db(self) -> LabelDB:
+        """懒加载商品向量库，避免普通聊天被 embedding 模型下载问题阻断。"""
+
+        if self.label_db is None:
+            self.label_db = LabelDB()
+        return self.label_db
 
     def _run_tools(self, state: ChatState) -> ChatState:
         """工具节点：执行 AIMessage 中的全部 tool_calls，并生成完整 ToolMessage。"""

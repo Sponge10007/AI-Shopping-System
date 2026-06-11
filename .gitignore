@@ -26,3 +26,11 @@ ai-service/.pytest_cache/
 storage/
 uploads/
 
+# Model
+ai-service/models
+ai-service/tests
+
+#database
+ai-service/app/*.db
+ai-service/app/*.db.bak
+ai-service/app/chroma_db/

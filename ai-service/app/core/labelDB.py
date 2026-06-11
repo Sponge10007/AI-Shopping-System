@@ -1,4 +1,5 @@
 import random
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -21,7 +22,7 @@ class LabelDB:
                     cls._instance = super(LabelDB, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, path="./chroma_db", max_workers=4):
+    def __init__(self, path=None, max_workers=4):
         """初始化 ChromaDB、Embedding 模型和后台线程池。"""
         if hasattr(self, "_initialized") and self._initialized:
             return
@@ -31,10 +32,19 @@ class LabelDB:
             if hasattr(self, "_initialized") and self._initialized:
                 return
 
+            if path is None:
+                path = os.getenv("LABELDB_CHROMA_PATH", "./chroma_db")
+            model_name_or_path = (
+                os.getenv("LABELDB_MODEL_PATH")
+                or os.getenv("SENTENCE_TRANSFORMERS_MODEL")
+                or "sentence-transformers/all-MiniLM-L6-v2"
+            )
+            cache_folder = os.getenv("SENTENCE_TRANSFORMERS_HOME") or None
+
             self.client = chromadb.PersistentClient(path=path)
             self.prod_collection = self.client.get_or_create_collection(name="products")
             self.user_collection = self.client.get_or_create_collection(name="user_labels")
-            self.model = SentenceTransformer("all-MiniLM-L6-v2")
+            self.model = SentenceTransformer(model_name_or_path, cache_folder=cache_folder)
             self.executor = ThreadPoolExecutor(max_workers=max_workers)
             self.user_label_lock = threading.Lock()
             self._initialized = True

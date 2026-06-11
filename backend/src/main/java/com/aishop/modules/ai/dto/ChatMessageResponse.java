@@ -7,7 +7,9 @@ import java.util.List;
 public record ChatMessageResponse(
         String sessionId,
         String answer,
-        List<ProductSummaryResponse> products
+        List<String> imageList,
+        List<String> linkList,
+        String rawAnswer,
+        List<ProductSummaryResponse> relatedProducts
 ) {
 }
-
