@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Bot, Search, ShoppingBag, UserRound } from 'lucide-vue-next'
+import { sessionState } from './stores/session'
 </script>
 
 <template>
@@ -14,8 +15,8 @@ import { Bot, Search, ShoppingBag, UserRound } from 'lucide-vue-next'
           <RouterLink to="/">智能选购</RouterLink>
           <RouterLink to="/compare">AI 对比</RouterLink>
           <RouterLink to="/orders">订单</RouterLink>
-          <RouterLink to="/merchant">商家</RouterLink>
-          <RouterLink to="/admin">管理</RouterLink>
+          <RouterLink v-if="sessionState.role === 'MERCHANT' || sessionState.role === 'ADMIN'" to="/merchant">商家</RouterLink>
+          <RouterLink v-if="sessionState.role === 'ADMIN'" to="/admin">管理</RouterLink>
         </div>
 
         <div class="nav-actions">

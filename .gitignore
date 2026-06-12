@@ -30,6 +30,11 @@ uploads/
 ai-service/models
 ai-service/tests
 
+#own-local-test
+.vscode/
+mytest/
+message.txt
+
 #database
 ai-service/app/*.db
 ai-service/app/*.db.bak

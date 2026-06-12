@@ -1,3 +1,6 @@
+import { error } from 'echarts/types/src/util/log.js'
+import { sessionState } from '../stores/session'
+
 const API_BASE = '/api/v1'
 
 export interface ProductSummary {
@@ -143,10 +146,99 @@ export async function createMerchantProduct(payload: {
   tags: string[]
   image_urls: string[]
 }): Promise<{ product_id: string; status: string; vector_index_status: string }> {
-  return request('/merchant/products', {
-    method: 'POST',
+  try{
+    return await request('/merchant/products', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  }catch(e){
+    throw new Error("createMerchantProduct:request");
+  }
+  
+}
+
+export async function listMerchantProducts(): Promise<PageResponse<ProductSummary>> {
+  try {
+    return await request<PageResponse<ProductSummary>>('/merchant/products')
+  } catch {
+    throw new Error("listMerchantProducts : Can't Get !")
+  }
+}
+
+export async function editMerchantProduct(productId: string, payload: Partial<{ name: string; description: string; price: string; stock: number; tags: string[]; image_urls: string[] }>) {
+  return request(`/merchant/products/${productId}`, {
+    method: 'PATCH',
     body: JSON.stringify(payload),
   })
+}
+
+export async function getMerchantProduct(productId: string): Promise<Product> {
+  try {
+    return await request<Product>(`/products/${productId}`)
+  } catch {
+    // fallback sample
+    throw new Error("getMerchantProduct")
+  }
+}
+
+export async function restockProduct(productId: string, quantity: number) : Promise<{stock:number}> {
+  try{
+    return  await request(`/merchant/products/${productId}/restock`, {
+              method: 'POST',
+              body: JSON.stringify({ quantity,remark:"0"}),
+            })
+  }catch{
+    throw new Error("restockProduct");
+  }
+  
+}
+
+export async function deleteMerchantProduct(productId: string) {
+  try {
+    return request(`/merchant/products/${productId}`, {
+      method: 'DELETE',
+    })
+  } catch {
+    throw new Error("deleteMerchantProduct : Can't Delete !")
+  }
+  
+}
+
+export async function uploadProductImage(file: File): Promise<{ url: string }> {
+  const fd = new FormData()
+  fd.append('image', file)
+  const response = await fetch(`${API_BASE}/uploads/product-images`, {
+    method: 'POST',
+    body: fd,
+    headers: {
+      // Content-Type should NOT be set when sending FormData
+      Authorization: `Bearer ${sessionState.token}`,
+    },
+  })
+  if (!response.ok) throw new Error('Upload failed')
+  const uploadProductImageResult = await response.json()
+  return uploadProductImageResult.data
+}
+
+export async function listAdminUsers(): Promise<PageResponse<{ user_id: string; username: string; role: string; status: string ;phone:string; created_at:string ; }>> {
+  try {
+    return await request('/admin/users')
+  } catch {
+    throw new Error("listAdminUsers")
+  }
+}
+
+export async function updateUserStatus(userId: string, status: string) {
+  try{
+    return request(`/admin/users/${userId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    })
+  }
+  catch{
+    throw new Error('updateUserStatus')
+  }
+  
 }
 
 export async function getAdminOverview(): Promise<{
@@ -160,14 +252,7 @@ export async function getAdminOverview(): Promise<{
   try {
     return await request('/admin/metrics/overview')
   } catch {
-    return {
-      user_count: 2,
-      product_count: 3,
-      order_count: 1,
-      today_order_count: 1,
-      ai_service_status: 'UP',
-      vector_db_status: 'UP',
-    }
+    throw new Error("getAdminOverview")
   }
 }
 
