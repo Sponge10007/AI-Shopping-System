@@ -1,6 +1,7 @@
 import json
 import os
 import traceback
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, Optional
 from urllib.parse import parse_qs, unquote, urlparse
@@ -48,6 +49,35 @@ Java 返回值可以是纯文本，也可以是 JSON：
 """
 
 
+def load_env_file():
+    """加载 ai-service/.env，避免每个新终端都要手动 source。
+
+    已存在的系统环境变量优先级更高，不会被 .env 覆盖。这样线上部署时仍可以
+    通过真正的环境变量覆盖本地开发配置。
+    """
+
+    candidate_paths = [
+        Path.cwd() / ".env",
+        Path.cwd().parent / ".env",
+        Path(__file__).resolve().parents[2] / ".env",
+    ]
+    env_path = next((path for path in candidate_paths if path.exists()), None)
+    if env_path is None:
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+load_env_file()
+
 HOST = os.getenv("PY_API_HOST", "127.0.0.1")
 PORT = int(os.getenv("PY_API_PORT", "9000"))
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
@@ -59,6 +89,7 @@ IMAGE_AI_BASE_URL = os.getenv("IMAGE_AI_BASE_URL", DEEPSEEK_BASE_URL)
 PROMPT_FILE_PATH = os.getenv("PROMPT_FILE_PATH", "prompt.txt")
 CHAT_DB_PATH = os.getenv("CHAT_DB_PATH", "sqlite:///chat_history.db")
 JAVA_PRODUCT_SEARCH_URL = os.getenv("JAVA_PRODUCT_SEARCH_URL", "")
+BACKEND_INTERNAL_BASE_URL = os.getenv("BACKEND_INTERNAL_BASE_URL", "http://127.0.0.1:8080/internal/v1")
 
 
 # LabelDB 会加载 Embedding 模型，成本较高；这里使用懒加载，避免导入 API 模块时就
@@ -124,18 +155,27 @@ def get_image_ai_app():
 def search_product_detail_from_java(product_id: str) -> str:
     """调用 Java 后端，按商品 ID 查询完整商品信息。
 
-    Java 侧建议提供一个 POST 接口，接收：
+    优先兼容旧 POST 接口，接收：
         {"id": "商品ID"}
+
+    也兼容当前 Java 后端已实现的内部接口：
+        GET /internal/v1/products/{product_id}/ai-summary
 
     返回：
         纯文本字符串；或 JSON 中带 data/result/content/detail 任一字段。
-
-    如果没有配置 JAVA_PRODUCT_SEARCH_URL，则返回空字符串。这样 /chat 不会因为商品
-    详情接口暂时没接好而崩溃，只是工具拿不到商品详情。
     """
 
-    if not JAVA_PRODUCT_SEARCH_URL:
-        return ""
+    if JAVA_PRODUCT_SEARCH_URL:
+        return fetch_product_detail_by_legacy_post(product_id)
+
+    if BACKEND_INTERNAL_BASE_URL:
+        return fetch_product_detail_by_internal_summary(product_id)
+
+    return ""
+
+
+def fetch_product_detail_by_legacy_post(product_id: str) -> str:
+    """调用旧的 POST 商品详情接口。"""
 
     payload = json.dumps({"id": str(product_id)}, ensure_ascii=False).encode("utf-8")
     request = url_request.Request(
@@ -153,6 +193,29 @@ def search_product_detail_from_java(product_id: str) -> str:
         print(f"[Warn] Java 商品详情接口调用失败: {exc}")
         return ""
 
+    return extract_product_detail(raw_body)
+
+
+def fetch_product_detail_by_internal_summary(product_id: str) -> str:
+    """调用当前 Java 后端内部商品摘要接口。"""
+
+    base_url = BACKEND_INTERNAL_BASE_URL.rstrip("/")
+    url = f"{base_url}/products/{product_id}/ai-summary"
+    request = url_request.Request(url, method="GET")
+
+    try:
+        with url_request.urlopen(request, timeout=5) as response:
+            raw_body = response.read().decode("utf-8")
+    except (HTTPError, URLError, TimeoutError) as exc:
+        print(f"[Warn] Java 商品摘要接口调用失败: {exc}")
+        return ""
+
+    return extract_product_detail(raw_body)
+
+
+def extract_product_detail(raw_body: str) -> str:
+    """从纯文本、旧 JSON 或 Java ApiResponse 中提取商品详情字符串。"""
+
     try:
         data = json.loads(raw_body)
     except json.JSONDecodeError:
@@ -161,6 +224,13 @@ def search_product_detail_from_java(product_id: str) -> str:
     if isinstance(data, str):
         return data
     if isinstance(data, dict):
+        nested_data = data.get("data")
+        if isinstance(nested_data, dict):
+            for key in ("summary_text", "summaryText", "summary", "detail", "content"):
+                value = nested_data.get(key)
+                if isinstance(value, str):
+                    return value
+            return json.dumps(nested_data, ensure_ascii=False)
         for key in ("data", "result", "content", "detail"):
             value = data.get(key)
             if isinstance(value, str):

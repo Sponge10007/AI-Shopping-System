@@ -5,8 +5,9 @@ public record AdminMetricsResponse(
         long productCount,
         long orderCount,
         long todayOrderCount,
+        long searchCountToday,
+        long aiChatCountToday,
         String aiServiceStatus,
         String vectorDbStatus
 ) {
 }
-
