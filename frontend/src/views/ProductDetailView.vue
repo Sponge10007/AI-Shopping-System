@@ -1,67 +1,179 @@
 <script setup lang="ts">
 import { Check, ShoppingBag, Sparkles } from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { getProductDetail, recordBehavior, type Product } from '../services/api'
+import { isLoggedIn } from '../stores/session'
 
-const thumbnails = [1, 2, 3, 4]
+const route = useRoute()
+const router = useRouter()
+
+const product = ref<Product | null>(null)
+const loading = ref(true)
+const error = ref('')
+const selectedImage = ref(0)
+
+onMounted(async () => {
+  const id = route.params.id as string
+  loading.value = true
+  try {
+    product.value = await getProductDetail(id)
+    // Record view behavior
+    if (isLoggedIn()) {
+      recordBehavior({
+        event_type: 'VIEW',
+        product_id: id,
+        metadata: { page: 'product_detail' },
+      }).catch(() => {})
+    }
+  } catch (e: any) {
+    error.value = e.message || '加载商品详情失败'
+  } finally {
+    loading.value = false
+  }
+})
+
+function buyNow() {
+  if (!isLoggedIn()) {
+    router.push('/login')
+    return
+  }
+  if (product.value) {
+    router.push({
+      path: '/checkout',
+      query: {
+        product_id: product.value.product_id,
+        name: product.value.name,
+        price: product.value.price,
+        image: product.value.image_urls?.[0] || '',
+      },
+    })
+  }
+}
 </script>
 
 <template>
   <div class="page detail-page">
-    <section class="detail-gallery">
-      <div class="detail-hero-image">
-        <img
-          src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80"
-          alt="智能降噪耳机"
-        />
-      </div>
-      <div class="thumb-grid">
-        <button v-for="item in thumbnails" :key="item" type="button" class="thumb-tile" :title="`缩略图 ${item}`">
+    <!-- Loading -->
+    <div v-if="loading" class="loading-state">
+      <p>加载商品详情中...</p>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="error-state">
+      <p>{{ error }}</p>
+      <RouterLink to="/" class="black-button">返回首页</RouterLink>
+    </div>
+
+    <!-- Product Detail -->
+    <template v-else-if="product">
+      <section class="detail-gallery">
+        <div class="detail-hero-image">
           <img
-            src="https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=400&q=80"
-            alt=""
+            :src="product.image_urls[selectedImage] || product.image_urls[0]"
+            :alt="product.name"
           />
-        </button>
-      </div>
-    </section>
-
-    <aside class="detail-info">
-      <span class="ai-chip">AI Verified</span>
-      <h1>智能降噪耳机 Pro Max</h1>
-      <p class="detail-price">¥ 299.00</p>
-
-      <section class="ai-reason-card">
-        <Sparkles :size="18" />
-        <div>
-          <h3>为什么它适合你？</h3>
-          <p>
-            基于你搜索的“通勤”“降噪”“三百元预算”，这款耳机在续航、舒适度和价格区间上更贴合当前意图。
-          </p>
+        </div>
+        <div v-if="product.image_urls.length > 1" class="thumb-grid">
+          <button
+            v-for="(url, idx) in product.image_urls"
+            :key="idx"
+            type="button"
+            class="thumb-tile"
+            :class="{ active: selectedImage === idx }"
+            :title="`缩略图 ${idx + 1}`"
+            @click="selectedImage = idx"
+          >
+            <img :src="url" alt="" />
+          </button>
         </div>
       </section>
 
-      <div class="score-grid">
-        <article>
-          <span>AI 匹配度</span>
-          <strong>98.5%</strong>
-        </article>
-        <article>
-          <span>性能权重</span>
-          <strong>均衡</strong>
-        </article>
-      </div>
+      <aside class="detail-info">
+        <span class="ai-chip">AI Verified</span>
+        <h1>{{ product.name }}</h1>
+        <p class="detail-price">¥ {{ product.price }}</p>
 
-      <ul class="detail-points">
-        <li><Check :size="17" /> 主动降噪，适合地铁和办公室</li>
-        <li><Check :size="17" /> 轻量佩戴，长时间使用压力低</li>
-        <li><Check :size="17" /> 可加入 AI 对比清单</li>
-      </ul>
+        <section class="ai-reason-card">
+          <Sparkles :size="18" />
+          <div>
+            <h3>为什么它适合你？</h3>
+            <p>
+              {{ product.description || 'AI 分析认为该商品与你的浏览偏好和购买历史高度匹配。' }}
+            </p>
+          </div>
+        </section>
 
-      <div class="detail-actions">
-        <button type="button" class="black-button full-button">
-          <ShoppingBag :size="18" />
-          <span>立即选购</span>
-        </button>
-        <RouterLink to="/compare" class="soft-button full-button">加入对比清单</RouterLink>
-      </div>
-    </aside>
+        <div class="score-grid">
+          <article>
+            <span>AI 匹配度</span>
+            <strong>{{ Math.round(product.rating * 20) }}%</strong>
+          </article>
+          <article>
+            <span>用户评分</span>
+            <strong>{{ product.rating }} / 5.0</strong>
+          </article>
+        </div>
+
+        <ul class="detail-points">
+          <li v-if="product.stock > 0">
+            <Check :size="17" /> 库存充足（{{ product.stock }} 件）
+          </li>
+          <li v-else>
+            <Check :size="17" style="color: #ff375f;" /> 暂时缺货
+          </li>
+          <li><Check :size="17" /> 已售 {{ product.sales }} 件</li>
+          <li>
+            <Check :size="17" />
+            标签：{{ product.tags?.join('、') || '暂无' }}
+          </li>
+        </ul>
+
+        <div class="detail-actions">
+          <button
+            type="button"
+            class="black-button full-button"
+            :disabled="product.stock <= 0"
+            @click="buyNow"
+          >
+            <ShoppingBag :size="18" />
+            <span>{{ product.stock > 0 ? '立即选购' : '暂时缺货' }}</span>
+          </button>
+          <RouterLink to="/compare" class="soft-button full-button">加入对比清单</RouterLink>
+        </div>
+      </aside>
+    </template>
   </div>
 </template>
+
+<style scoped>
+.loading-state,
+.error-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 16px;
+  color: #86868b;
+}
+
+.error-state p {
+  color: #d32f2f;
+}
+
+.thumb-tile.active {
+  border-color: #0071e3;
+}
+
+.black-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.black-button:disabled:hover {
+  transform: none;
+  background: #1d1d1f;
+}
+</style>

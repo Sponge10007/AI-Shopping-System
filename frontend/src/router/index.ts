@@ -7,38 +7,68 @@ import OrdersView from '../views/OrdersView.vue'
 import ProductDetailView from '../views/ProductDetailView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import ShoppingView from '../views/ShoppingView.vue'
+import AIChatView from '../views/AIChatView.vue'
+import CheckoutView from '../views/CheckoutView.vue'
 import AdminUsersView from '../views/AdminUsersView.vue'
 import AdminMetricsView from '../views/AdminMetricsView.vue'
 import MerchantUploadView from '../views/MerchantUploadView.vue'
 import MerchantEditView from '../views/MerchantEditView.vue'
 import MerchantRestockView from '../views/MerchantRestockView.vue'
-import { sessionState } from '../stores/session'
+import { sessionState } from '../stores/session.ts'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // ── Customer (Frontend 1) ──
     { path: '/', name: 'shopping', component: ShoppingView },
-    { path: '/login', name: 'login', component: LoginView },
+    { path: '/login', name: 'login', component: LoginView, meta: { guest: true } },
     { path: '/detail/:id', name: 'detail', component: ProductDetailView },
     { path: '/compare', name: 'compare', component: CompareView },
-    { path: '/profile', name: 'profile', component: ProfileView },
-    { path: '/orders', name: 'orders', component: OrdersView },
-    { path: '/merchant', name: 'merchant', component: MerchantView, meta: { roles: ['MERCHANT','ADMIN'] } },
-    { path: '/merchant/uploads', name: 'product-upload', component: MerchantUploadView, meta: { roles: ['MERCHANT','ADMIN'] } },
-    { path: '/merchant/products/:id/edit', name: 'product-edit', component: MerchantEditView, meta: { roles: ['MERCHANT','ADMIN'] } },
-    { path: '/merchant/products/:id/restock', name: 'product-restock', component: MerchantRestockView, meta: { roles: ['MERCHANT','ADMIN'] } },
-    { path: '/admin', name: 'admin', component: AdminView, meta: { roles: ['ADMIN'] } },
-    { path: '/admin/users', name: 'admin-users', component: AdminUsersView, meta: { roles: ['ADMIN'] } },
-    { path: '/admin/metrics', name: 'admin-metrics', component: AdminMetricsView, meta: { roles: ['ADMIN'] } },
+    { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true } },
+    { path: '/orders', name: 'orders', component: OrdersView, meta: { auth: true } },
+    { path: '/chat', name: 'chat', component: AIChatView, meta: { auth: true } },
+    { path: '/checkout', name: 'checkout', component: CheckoutView, meta: { auth: true } },
+
+    // ── Merchant (Frontend 2) ──
+    { path: '/merchant', name: 'merchant', component: MerchantView, meta: { auth: true, roles: ['MERCHANT', 'ADMIN'] } },
+    { path: '/merchant/uploads', name: 'product-upload', component: MerchantUploadView, meta: { auth: true, roles: ['MERCHANT', 'ADMIN'] } },
+    { path: '/merchant/products/:id/edit', name: 'product-edit', component: MerchantEditView, meta: { auth: true, roles: ['MERCHANT', 'ADMIN'] } },
+    { path: '/merchant/products/:id/restock', name: 'product-restock', component: MerchantRestockView, meta: { auth: true, roles: ['MERCHANT', 'ADMIN'] } },
+
+    // ── Admin (Frontend 2) ──
+    { path: '/admin', name: 'admin', component: AdminView, meta: { auth: true, roles: ['ADMIN'] } },
+    { path: '/admin/users', name: 'admin-users', component: AdminUsersView, meta: { auth: true, roles: ['ADMIN'] } },
+    { path: '/admin/metrics', name: 'admin-metrics', component: AdminMetricsView, meta: { auth: true, roles: ['ADMIN'] } },
   ],
 })
 
-// router.beforeEach((to, from, next) => {
-//   const required = (to.meta as any)?.roles as string[] | undefined
-//   if (!required || required.length === 0) return next()
-//   const role = sessionState.role || 'CUSTOMER'
-//   if (required.includes(role)) return next()
-//   return next({ name: 'login' })
-// })
+// Global navigation guard
+router.beforeEach((to, _from, next) => {
+  const meta = to.meta as {
+    auth?: boolean
+    guest?: boolean
+    roles?: string[]
+  }
+
+  // Guest-only routes (like login) — redirect to home if already logged in
+  if (meta.guest && sessionState.token) {
+    return next({ name: 'shopping' })
+  }
+
+  // Auth-required routes
+  if (meta.auth && !sessionState.token) {
+    return next({ name: 'login', query: { redirect: to.fullPath } })
+  }
+
+  // Role-restricted routes
+  if (meta.roles && meta.roles.length > 0) {
+    const userRole = sessionState.role || 'CUSTOMER'
+    if (!meta.roles.includes(userRole)) {
+      return next({ name: 'shopping' })
+    }
+  }
+
+  next()
+})
 
 export default router

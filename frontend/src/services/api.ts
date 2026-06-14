@@ -1,7 +1,8 @@
-import { error } from 'echarts/types/src/util/log.js'
-import { sessionState } from '../stores/session'
+import { getAuthHeaders, sessionState } from '../stores/session'
 
 const API_BASE = '/api/v1'
+
+// ── Types ────────────────────────────────────────────
 
 export interface ProductSummary {
   product_id: string
@@ -31,6 +32,9 @@ export interface Product {
   status: string
   tags: string[]
   image_urls: string[]
+  detail_url?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface PageResponse<T> {
@@ -48,6 +52,73 @@ interface ApiResponse<T> {
   data: T
   trace_id: string
 }
+
+export interface UserInfo {
+  user_id: string
+  username: string
+  role: string
+  nickname?: string
+  phone?: string
+  avatar_url?: string
+  created_at?: string
+}
+
+export interface OrderItem {
+  product_id: string
+  name: string
+  unit_price: string
+  quantity: number
+}
+
+export interface OrderReceiver {
+  name: string
+  phone: string
+  address: string
+}
+
+export interface Order {
+  order_id: string
+  user_id: string
+  status: string
+  total_amount: string
+  items: OrderItem[]
+  receiver: OrderReceiver
+  created_at?: string
+}
+
+export interface ChatSession {
+  session_id: string
+  title: string
+  created_at?: string
+}
+
+export interface ChatMessageResponse {
+  session_id: string
+  answer: string
+  image_list?: string[]
+  link_list?: string[]
+  related_products?: ProductSummary[]
+}
+
+export interface PaymentResult {
+  payment_id: string
+  order_id: string
+  payment_status: string
+  paid_at?: string
+}
+
+export interface AdminOverview {
+  user_count: number
+  product_count: number
+  order_count: number
+  today_order_count: number
+  search_count_today: number
+  ai_chat_count_today: number
+  ai_service_status: string
+  vector_db_status: string
+}
+
+// ── Fallback data ────────────────────────────────────
 
 const fallbackProducts: ProductSummary[] = [
   {
@@ -88,183 +159,515 @@ const fallbackProducts: ProductSummary[] = [
   },
 ]
 
+const fallbackProductDetail: Product = {
+  product_id: '10001',
+  merchant_id: 'm10001',
+  name: '蓝牙降噪耳机',
+  description: '适合通勤和学习的主动降噪蓝牙耳机，支持蓝牙5.3，续航长达40小时，佩戴舒适。',
+  category_id: 'c_headphone',
+  category_name: '耳机',
+  price: '299.00',
+  stock: 120,
+  sales: 320,
+  rating: 4.8,
+  status: 'ON_SALE',
+  tags: ['蓝牙', '降噪', '通勤'],
+  image_urls: [
+    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=1200&q=80',
+  ],
+  detail_url: 'https://example.com/products/10001',
+}
+
+const fallbackOrders: Order[] = [
+  {
+    order_id: 'o10001',
+    user_id: 'u10001',
+    status: 'CREATED',
+    total_amount: '598.00',
+    items: [{ product_id: '10001', name: '蓝牙降噪耳机', unit_price: '299.00', quantity: 2 }],
+    receiver: { name: '张三', phone: '13800000000', address: '浙江省杭州市西湖区' },
+    created_at: '2026-06-14T10:30:00+08:00',
+  },
+  {
+    order_id: 'o10002',
+    user_id: 'u10001',
+    status: 'PAID',
+    total_amount: '129.00',
+    items: [{ product_id: '10002', name: '智能保温杯', unit_price: '129.00', quantity: 1 }],
+    receiver: { name: '张三', phone: '13800000000', address: '浙江省杭州市西湖区' },
+    created_at: '2026-06-13T15:20:00+08:00',
+  },
+]
+
+// ── Core request helpers ─────────────────────────────
+
+const REQUEST_TIMEOUT_MS = 4000 // fail fast when backend is unreachable
+
+/**
+ * Tiny fetch-with-timeout wrapper.  Throws if the server doesn't respond
+ * within REQUEST_TIMEOUT_MS so that every caller's catch block can serve
+ * fallback data immediately.
+ */
+async function fetchWithTimeout(url: string, options?: RequestInit, timeoutMs = REQUEST_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+    return response
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer dev-access-token',
-      ...options?.headers,
-    },
+  const response = await fetchWithTimeout(`${API_BASE}${path}`, {
+    headers: getAuthHeaders(),
     ...options,
   })
 
   if (!response.ok) {
-    throw new Error(`API ${response.status}`)
+    const body = await response.json().catch(() => ({}))
+    throw new Error((body as any).message || `API ${response.status}`)
   }
 
   const body = (await response.json()) as ApiResponse<T>
   if (!body.success) {
-    throw new Error(body.message)
+    throw new Error(body.message || body.code)
   }
   return body.data
 }
 
-export async function listProducts(): Promise<PageResponse<ProductSummary>> {
+/**
+ * Multipart request helper — does NOT set Content-Type so the browser can set
+ * the boundary automatically.
+ */
+async function requestMultipart<T>(path: string, formData: FormData): Promise<T> {
+  const headers: Record<string, string> = {}
+  if (sessionState.token) {
+    headers['Authorization'] = `Bearer ${sessionState.token}`
+  }
+
+  const response = await fetchWithTimeout(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  })
+
+  if (!response.ok) {
+    throw new Error(`Upload failed ${response.status}`)
+  }
+  const body = (await response.json()) as ApiResponse<T>
+  if (!body.success) {
+    throw new Error(body.message || body.code)
+  }
+  return body.data
+}
+
+// ── Auth ─────────────────────────────────────────────
+
+export async function register(payload: {
+  username: string
+  phone: string
+  password: string
+  role: string
+}): Promise<{ user_id: string; username: string; role: string }> {
+  return request('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function loginApi(payload: {
+  account: string
+  password: string
+}): Promise<{
+  access_token: string
+  refresh_token: string
+  expires_in: number
+  user: UserInfo
+}> {
+  return request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function logoutApi(): Promise<{ logged_out: boolean }> {
   try {
-    return await request<PageResponse<ProductSummary>>('/products')
+    return await request('/auth/logout', { method: 'POST' })
+  } catch {
+    return { logged_out: true }
+  }
+}
+
+// ── Users ────────────────────────────────────────────
+
+export async function getUserProfile(): Promise<UserInfo> {
+  try {
+    return await request<UserInfo>('/users/me')
+  } catch {
+    // fallback for offline dev
+    return {
+      user_id: sessionState.userId || 'u10001',
+      username: 'demo_user',
+      role: 'CUSTOMER',
+      nickname: '探索者',
+      phone: '138****0000',
+      avatar_url: '',
+      created_at: '2026-01-01T00:00:00+08:00',
+    }
+  }
+}
+
+export async function updateUserProfile(payload: {
+  nickname?: string
+  phone?: string
+  avatar_url?: string
+}): Promise<UserInfo> {
+  return request('/users/me', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+// ── Products ─────────────────────────────────────────
+
+export async function getProductList(params?: {
+  keyword?: string
+  category_id?: string
+  min_price?: string
+  max_price?: string
+  tags?: string
+  sort?: string
+  page?: number
+  size?: number
+}): Promise<PageResponse<ProductSummary>> {
+  try {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== '') searchParams.set(k, String(v))
+      })
+    }
+    const qs = searchParams.toString()
+    return await request<PageResponse<ProductSummary>>(`/products${qs ? `?${qs}` : ''}`)
   } catch {
     return { items: fallbackProducts, page: 1, size: 20, total: fallbackProducts.length, has_next: false }
   }
 }
 
-export async function semanticSearch(query: string): Promise<ProductSummary[]> {
+export async function getProductDetail(productId: string): Promise<Product> {
   try {
-    const data = await request<{ items: ProductSummary[] }>('/search/semantic', {
-      method: 'POST',
-      body: JSON.stringify({ query, distance_threshold: 0.9, limit: 20 }),
-    })
-    return data.items
+    return await request<Product>(`/products/${productId}`)
   } catch {
-    return fallbackProducts.map((product) => ({ ...product, reason: `“${query}” 的本地示例结果` }))
+    // fallback
+    return { ...fallbackProductDetail, product_id: productId }
   }
 }
 
-export async function homeRecommendations(): Promise<ProductSummary[]> {
+// ── Search & Recommendations ─────────────────────────
+
+export async function semanticSearch(query: string, filters?: {
+  category_id?: string
+  min_price?: string
+  max_price?: string
+  in_stock?: boolean
+}): Promise<{ query: string; relaxed: boolean; items: ProductSummary[] }> {
   try {
-    const data = await request<{ items: ProductSummary[] }>('/recommendations/home')
-    return data.items
+    return await request('/search/semantic', {
+      method: 'POST',
+      body: JSON.stringify({ query, filters, distance_threshold: 0.9, limit: 20 }),
+    })
   } catch {
-    return fallbackProducts
+    return {
+      query,
+      relaxed: false,
+      items: fallbackProducts.map((p) => ({ ...p, reason: `"${query}" 的本地示例结果` })),
+    }
   }
 }
+
+export async function imageSearch(file: File, limit?: number): Promise<{
+  detected_object: string
+  items: ProductSummary[]
+}> {
+  const fd = new FormData()
+  fd.append('image', file)
+  if (limit) fd.append('limit', String(limit))
+  try {
+    return await requestMultipart('/search/image', fd)
+  } catch {
+    return {
+      detected_object: '未知物体',
+      items: fallbackProducts.slice(0, 2),
+    }
+  }
+}
+
+export async function uploadSearchImage(file: File): Promise<{
+  temp_url: string
+  expires_at: string
+}> {
+  const fd = new FormData()
+  fd.append('image', file)
+  return requestMultipart('/uploads/search-images', fd)
+}
+
+export async function homeRecommendations(limit?: number): Promise<{
+  strategy: string
+  items: ProductSummary[]
+}> {
+  try {
+    const qs = limit ? `?limit=${limit}` : ''
+    return await request(`/recommendations/home${qs}`)
+  } catch {
+    return {
+      strategy: 'FALLBACK',
+      items: fallbackProducts,
+    }
+  }
+}
+
+// ── AI Chat ──────────────────────────────────────────
+
+export async function createChatSession(title: string): Promise<ChatSession> {
+  try {
+    return await request('/ai/chat/sessions', {
+      method: 'POST',
+      body: JSON.stringify({ title }),
+    })
+  } catch {
+    return {
+      session_id: `s${Date.now()}`,
+      title,
+      created_at: new Date().toISOString(),
+    }
+  }
+}
+
+export async function sendChatMessage(
+  sessionId: string,
+  content: string,
+): Promise<ChatMessageResponse> {
+  try {
+    return await request(`/ai/chat/sessions/${sessionId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    })
+  } catch {
+    return {
+      session_id: sessionId,
+      answer: `这是本地示例回复：关于"${content}"，建议你优先比较预算、使用场景、续航和售后。你可以查看首页推荐或使用 AI 对比功能来做出更好的选择。`,
+      image_list: [],
+      link_list: [],
+      related_products: fallbackProducts.slice(0, 2),
+    }
+  }
+}
+
+export async function deleteChatHistory(sessionId: string): Promise<{
+  session_id: string
+  history_deleted: boolean
+}> {
+  try {
+    return await request(`/ai/chat/sessions/${sessionId}/history`, { method: 'DELETE' })
+  } catch {
+    return { session_id: sessionId, history_deleted: true }
+  }
+}
+
+// ── Orders ───────────────────────────────────────────
+
+export async function createOrder(payload: {
+  items: { product_id: string; quantity: number }[]
+  receiver: OrderReceiver
+}): Promise<Order> {
+  try {
+    return await request('/orders', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    // fallback: simulate order creation
+    return {
+      order_id: `o${Date.now()}`,
+      user_id: sessionState.userId || 'u10001',
+      status: 'CREATED',
+      total_amount: '299.00',
+      items: payload.items.map((item) => ({
+        product_id: item.product_id,
+        name: '商品',
+        unit_price: '299.00',
+        quantity: item.quantity,
+      })),
+      receiver: payload.receiver,
+      created_at: new Date().toISOString(),
+    }
+  }
+}
+
+export async function getOrders(params?: {
+  status?: string
+  page?: number
+  size?: number
+}): Promise<PageResponse<Order>> {
+  try {
+    const searchParams = new URLSearchParams()
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== '') searchParams.set(k, String(v))
+      })
+    }
+    const qs = searchParams.toString()
+    return await request<PageResponse<Order>>(`/orders${qs ? `?${qs}` : ''}`)
+  } catch {
+    let items = fallbackOrders
+    if (params?.status) {
+      items = items.filter((o) => o.status === params.status)
+    }
+    return { items, page: 1, size: 20, total: items.length, has_next: false }
+  }
+}
+
+export async function getOrderDetail(orderId: string): Promise<Order> {
+  try {
+    return await request<Order>(`/orders/${orderId}`)
+  } catch {
+    const found = fallbackOrders.find((o) => o.order_id === orderId)
+    return found || fallbackOrders[0]
+  }
+}
+
+export async function payOrder(orderId: string, paymentMethod: string = 'BALANCE'): Promise<PaymentResult> {
+  try {
+    return await request(`/orders/${orderId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify({ payment_method: paymentMethod }),
+    })
+  } catch {
+    return {
+      payment_id: `p${Date.now()}`,
+      order_id: orderId,
+      payment_status: 'PAID',
+      paid_at: new Date().toISOString(),
+    }
+  }
+}
+
+// ── Behavior Events ──────────────────────────────────
+
+export async function recordBehavior(payload: {
+  event_type: string
+  product_id?: string
+  query?: string
+  metadata?: Record<string, string>
+}): Promise<{ accepted: boolean }> {
+  try {
+    return await request('/behavior-events', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    return { accepted: true }
+  }
+}
+
+// ── Merchant (Frontend 2 — keep existing) ────────────
 
 export async function createMerchantProduct(payload: {
   name: string
   description: string
+  category_id?: string
   price: string
   stock: number
   tags: string[]
   image_urls: string[]
 }): Promise<{ product_id: string; status: string; vector_index_status: string }> {
-  try{
-    return await request('/merchant/products', {
-      method: 'POST',
-      body: JSON.stringify(payload),
+  return request('/merchant/products', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function listMerchantProducts(params?: {
+  status?: string
+  page?: number
+  size?: number
+}): Promise<PageResponse<ProductSummary>> {
+  const searchParams = new URLSearchParams()
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== '') searchParams.set(k, String(v))
     })
-  }catch(e){
-    throw new Error("createMerchantProduct:request");
   }
-  
+  const qs = searchParams.toString()
+  return request(`/merchant/products${qs ? `?${qs}` : ''}`)
 }
 
-export async function listMerchantProducts(): Promise<PageResponse<ProductSummary>> {
-  try {
-    return await request<PageResponse<ProductSummary>>('/merchant/products')
-  } catch {
-    throw new Error("listMerchantProducts : Can't Get !")
-  }
+export async function getMerchantProduct(productId: string): Promise<Product> {
+  return request<Product>(`/products/${productId}`)
 }
 
-export async function editMerchantProduct(productId: string, payload: Partial<{ name: string; description: string; price: string; stock: number; tags: string[]; image_urls: string[] }>) {
+export async function editMerchantProduct(
+  productId: string,
+  payload: Partial<{
+    name: string; description: string; price: string
+    stock: number; tags: string[]; image_urls: string[]
+  }>,
+) {
   return request(`/merchant/products/${productId}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   })
 }
 
-export async function getMerchantProduct(productId: string): Promise<Product> {
-  try {
-    return await request<Product>(`/products/${productId}`)
-  } catch {
-    // fallback sample
-    throw new Error("getMerchantProduct")
-  }
-}
-
-export async function restockProduct(productId: string, quantity: number) : Promise<{stock:number}> {
-  try{
-    return  await request(`/merchant/products/${productId}/restock`, {
-              method: 'POST',
-              body: JSON.stringify({ quantity,remark:"0"}),
-            })
-  }catch{
-    throw new Error("restockProduct");
-  }
-  
+export async function restockProduct(productId: string, quantity: number): Promise<{ product_id: string; stock: number }> {
+  return request(`/merchant/products/${productId}/restock`, {
+    method: 'POST',
+    body: JSON.stringify({ quantity, remark: '' }),
+  })
 }
 
 export async function deleteMerchantProduct(productId: string) {
-  try {
-    return request(`/merchant/products/${productId}`, {
-      method: 'DELETE',
-    })
-  } catch {
-    throw new Error("deleteMerchantProduct : Can't Delete !")
-  }
-  
+  return request(`/merchant/products/${productId}`, { method: 'DELETE' })
 }
 
-export async function uploadProductImage(file: File): Promise<{ url: string }> {
+export async function uploadProductImage(file: File): Promise<{ url: string; object_key: string }> {
   const fd = new FormData()
-  fd.append('image', file)
-  const response = await fetch(`${API_BASE}/uploads/product-images`, {
-    method: 'POST',
-    body: fd,
-    headers: {
-      // Content-Type should NOT be set when sending FormData
-      Authorization: `Bearer ${sessionState.token}`,
-    },
+  fd.append('file', file)
+  return requestMultipart('/uploads/product-images', fd)
+}
+
+// ── Admin (Frontend 2 — keep existing) ───────────────
+
+export async function listAdminUsers(params?: {
+  role?: string
+  keyword?: string
+  page?: number
+  size?: number
+}): Promise<PageResponse<UserInfo & { status: string }>> {
+  const searchParams = new URLSearchParams()
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== '') searchParams.set(k, String(v))
+    })
+  }
+  const qs = searchParams.toString()
+  return request(`/admin/users${qs ? `?${qs}` : ''}`)
+}
+
+export async function updateUserStatus(userId: string, status: string): Promise<{ user_id: string; status: string }> {
+  return request(`/admin/users/${userId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
   })
-  if (!response.ok) throw new Error('Upload failed')
-  const uploadProductImageResult = await response.json()
-  return uploadProductImageResult.data
 }
 
-export async function listAdminUsers(): Promise<PageResponse<{ user_id: string; username: string; role: string; status: string ;phone:string; created_at:string ; }>> {
-  try {
-    return await request('/admin/users')
-  } catch {
-    throw new Error("listAdminUsers")
-  }
+export async function getAdminOverview(): Promise<AdminOverview> {
+  return request('/admin/metrics/overview')
 }
-
-export async function updateUserStatus(userId: string, status: string) {
-  try{
-    return request(`/admin/users/${userId}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    })
-  }
-  catch{
-    throw new Error('updateUserStatus')
-  }
-  
-}
-
-export async function getAdminOverview(): Promise<{
-  user_count: number
-  product_count: number
-  order_count: number
-  today_order_count: number
-  ai_service_status: string
-  vector_db_status: string
-}> {
-  try {
-    return await request('/admin/metrics/overview')
-  } catch {
-    throw new Error("getAdminOverview")
-  }
-}
-
-export async function sendChatMessage(sessionId: string, content: string): Promise<string> {
-  try {
-    const data = await request<{ answer: string }>(`/ai/chat/sessions/${sessionId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({ content }),
-    })
-    return data.answer
-  } catch {
-    return '这里是本地示例回复：可以优先比较预算、使用场景、续航、售后和库存。'
-  }
-}
-
