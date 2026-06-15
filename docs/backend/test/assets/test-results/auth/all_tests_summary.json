@@ -1,0 +1,100 @@
+{
+    "StartTime":  "2026-06-07 11:34:36",
+    "Passed":  53,
+    "TestSuite":  "Auth 模块全量测试",
+    "Details":  [
+                    {
+                        "Passed":  5,
+                        "Timestamp":  "2026-06-07 11:34:37",
+                        "Total":  5,
+                        "Results":  [
+                                        "@{Name=TC-R001: 正常注册 CUSTOMER 用户; Status=PASS; Detail=success=True}",
+                                        "@{Name=TC-R002: 正常注册 MERCHANT 用户; Status=PASS; Detail=success=True}",
+                                        "@{Name=TC-R003: 重复用户名注册; Status=PASS; Detail=success=False, code=DUPLICATE_RESOURCE}",
+                                        "@{Name=TC-R004: 重复手机号注册; Status=PASS; Detail=success=False, code=DUPLICATE_RESOURCE}",
+                                        "@{Name=TC-R005: 缺少必填字段（无 username）; Status=PASS; Detail=success=False, code=INVALID_ARGUMENT}"
+                                    ],
+                        "Failed":  0,
+                        "TestSuite":  "注册接口测试"
+                    },
+                    {
+                        "Passed":  6,
+                        "Timestamp":  "2026-06-07 11:34:37",
+                        "Total":  6,
+                        "Results":  [
+                                        "@{Name=TC-L001: 使用用户名正常登录; Status=PASS; Detail=success=True}",
+                                        "@{Name=TC-L002: 使用手机号正常登录; Status=PASS; Detail=success=True}",
+                                        "@{Name=TC-L003: 密码错误登录; Status=PASS; Detail=success=False, code=UNAUTHORIZED}",
+                                        "@{Name=TC-L004: 用户不存在登录; Status=PASS; Detail=success=False, code=RESOURCE_NOT_FOUND}",
+                                        "@{Name=TC-L005: 缺少必填字段（无 account）; Status=PASS; Detail=success=False, code=INVALID_ARGUMENT}",
+                                        "@{Name=TC-L006: 验证 Token 格式和响应结构; Status=PASS; Detail=所有字段完整，JWT 格式正确}"
+                                    ],
+                        "Failed":  0,
+                        "TestSuite":  "登录接口测试"
+                    },
+                    {
+                        "Passed":  4,
+                        "Timestamp":  "2026-06-07 11:34:37",
+                        "Total":  4,
+                        "Results":  [
+                                        "@{Name=TC-O001: 正常登出（携带有效 Token）; Status=PASS; Detail=success=True}",
+                                        "@{Name=TC-O002: 未携带 Token 登出（简化实现）; Status=PASS; Detail=success=True}",
+                                        "@{Name=TC-O003: 携带无效 Token 登出（简化实现）; Status=PASS; Detail=success=True}",
+                                        "@{Name=TC-O004: 验证登出响应结构; Status=PASS; Detail=响应结构完整}"
+                                    ],
+                        "Failed":  0,
+                        "TestSuite":  "登出接口测试"
+                    },
+                    {
+                        "Passed":  38,
+                        "Timestamp":  "2026-06-07 11:34:38",
+                        "Total":  38,
+                        "Results":  [
+                                        "@{Name=F1.1 CUSTOMER 注册成功; Status=PASS; Detail=username=flow_customer_20260607113437}",
+                                        "@{Name=F1.2 返回 userId; Status=PASS; Detail=userId=u10029}",
+                                        "@{Name=F1.3 返回 role=CUSTOMER; Status=PASS; Detail=role=CUSTOMER}",
+                                        "@{Name=F1.4 userId 以 u 开头; Status=PASS; Detail=userId=u10029}",
+                                        "@{Name=F2.1 用户名登录成功; Status=PASS; Detail=account=flow_customer_20260607113437}",
+                                        "@{Name=F2.2 返回 access_token; Status=PASS; Detail=长度=156}",
+                                        "@{Name=F2.3 返回 refresh_token; Status=PASS; Detail=长度=156}",
+                                        "@{Name=F2.4 expires_in = 7200; Status=PASS; Detail=expires_in=7200}",
+                                        "@{Name=F2.5 返回用户信息; Status=PASS; Detail=user={\"user_id\":\"u10029\",\"username\":\"flow_customer_20260607113437\",\"role\":\"CUSTOMER\"}}",
+                                        "@{Name=F2.6 用户信息中 userId 匹配; Status=PASS; Detail=userId=u10029}",
+                                        "@{Name=F3.1 手机号登录成功; Status=PASS; Detail=account=1383333113437}",
+                                        "@{Name=F3.2 手机号登录返回相同 userId; Status=PASS; Detail=userId=u10029}",
+                                        "@{Name=F4.1 携带有效 Token 登出成功; Status=PASS; Detail=}",
+                                        "@{Name=F4.2 不携带 Token 登出（简化实现返回成功）; Status=PASS; Detail=当前为简化实现}",
+                                        "@{Name=F4.3 携带无效 Token 登出（简化实现返回成功）; Status=PASS; Detail=当前为简化实现}",
+                                        "@{Name=F5.1 错误密码登录失败; Status=PASS; Detail=statusCode=401}",
+                                        "@{Name=F5.2 返回错误码 UNAUTHORIZED; Status=PASS; Detail=code=UNAUTHORIZED}",
+                                        "@{Name=F6.1 不存在的用户登录失败; Status=PASS; Detail=statusCode=404}",
+                                        "@{Name=F6.2 返回错误码 RESOURCE_NOT_FOUND; Status=PASS; Detail=code=RESOURCE_NOT_FOUND}",
+                                        "@{Name=F7.1 重复用户名注册失败; Status=PASS; Detail=statusCode=409}",
+                                        "@{Name=F7.2 返回错误码 DUPLICATE_RESOURCE; Status=PASS; Detail=code=DUPLICATE_RESOURCE}",
+                                        "@{Name=F7.3 重复手机号注册失败; Status=PASS; Detail=statusCode=409}",
+                                        "@{Name=F7.4 返回错误码 DUPLICATE_RESOURCE; Status=PASS; Detail=code=DUPLICATE_RESOURCE}",
+                                        "@{Name=F8.1 MERCHANT 注册成功; Status=PASS; Detail=username=flow_merchant_20260607113437}",
+                                        "@{Name=F8.2 MERCHANT 的 userId 以 m 开头; Status=PASS; Detail=userId=m10030}",
+                                        "@{Name=F8.3 MERCHANT 的 role=MERCHANT; Status=PASS; Detail=role=MERCHANT}",
+                                        "@{Name=F8.4 MERCHANT 登录成功; Status=PASS; Detail=}",
+                                        "@{Name=F8.5 MERCHANT 登录返回 role=MERCHANT; Status=PASS; Detail=role=MERCHANT}",
+                                        "@{Name=F9.1 注册缺少 username 失败; Status=PASS; Detail=statusCode=400}",
+                                        "@{Name=F9.2 注册缺少 password 失败; Status=PASS; Detail=statusCode=400}",
+                                        "@{Name=F9.3 登录缺少 account 失败; Status=PASS; Detail=statusCode=400}",
+                                        "@{Name=F10.1 Token 包含 sub (userId); Status=PASS; Detail=sub=u10029}",
+                                        "@{Name=F10.2 Token 包含 role; Status=PASS; Detail=role=CUSTOMER}",
+                                        "@{Name=F10.3 Token 包含 iat (签发时间); Status=PASS; Detail=iat=1780803277}",
+                                        "@{Name=F10.4 Token 包含 exp (过期时间); Status=PASS; Detail=exp=1780810477}",
+                                        "@{Name=F10.5 Token 中 sub 与 userId 一致; Status=PASS; Detail=sub=u10029, userId=u10029}",
+                                        "@{Name=F10.6 Token 中 role 为 CUSTOMER; Status=PASS; Detail=role=CUSTOMER}",
+                                        "@{Name=F10.7 Token 过期时间 = iat + 7200s; Status=PASS; Detail=exp=1780810477, iat+7200=1780810477}"
+                                    ],
+                        "Failed":  0,
+                        "TestSuite":  "Auth 完整业务流程测试"
+                    }
+                ],
+    "EndTime":  "2026-06-07 11:34:38",
+    "PassRate":  100,
+    "Total":  53,
+    "Failed":  0
+}

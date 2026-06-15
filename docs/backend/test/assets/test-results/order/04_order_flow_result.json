@@ -1,0 +1,289 @@
+{
+  "TestSuite": "订单模块完整业务流程测试",
+  "Timestamp": "2026-06-08 11:50:27",
+  "Total": 56,
+  "Passed": 56,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "F1.1 MERCHANT 注册成功",
+      "Status": "PASS",
+      "Detail": "username=flow_merchant_20260608115026"
+    },
+    {
+      "Name": "F1.2 返回 userId",
+      "Status": "PASS",
+      "Detail": "userId=m10081"
+    },
+    {
+      "Name": "F1.3 userId 以 m 开头",
+      "Status": "PASS",
+      "Detail": "userId=m10081"
+    },
+    {
+      "Name": "F1.4 商家登录成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F2.1 CUSTOMER 注册成功",
+      "Status": "PASS",
+      "Detail": "username=flow_buyer_20260608115026"
+    },
+    {
+      "Name": "F2.2 返回 userId",
+      "Status": "PASS",
+      "Detail": "userId=u10082"
+    },
+    {
+      "Name": "F2.3 userId 以 u 开头",
+      "Status": "PASS",
+      "Detail": "userId=u10082"
+    },
+    {
+      "Name": "F2.4 买家登录成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F2.5 其他买家注册成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F3.1 创建耳机商品成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F3.2 创建手机商品成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F3.3 创建配件商品成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "F4.1 创建单商品订单成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "F4.2 返回 orderId",
+      "Status": "PASS",
+      "Detail": "orderId=o10035"
+    },
+    {
+      "Name": "F4.3 orderId 以 o 开头",
+      "Status": "PASS",
+      "Detail": "orderId=o10035"
+    },
+    {
+      "Name": "F4.4 返回 status=CREATED",
+      "Status": "PASS",
+      "Detail": "status=CREATED"
+    },
+    {
+      "Name": "F4.5 金额正确",
+      "Status": "PASS",
+      "Detail": "totalAmount=598.00"
+    },
+    {
+      "Name": "F4.6 返回1个订单项",
+      "Status": "PASS",
+      "Detail": "items_count=1"
+    },
+    {
+      "Name": "F4.7 返回收货信息",
+      "Status": "PASS",
+      "Detail": "receiver={'name': '张三', 'phone': '13800138000', 'address': '北京市朝阳区'}"
+    },
+    {
+      "Name": "F5.1 创建多商品订单成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "F5.2 返回 orderId",
+      "Status": "PASS",
+      "Detail": "orderId=o10036"
+    },
+    {
+      "Name": "F5.3 返回3个订单项",
+      "Status": "PASS",
+      "Detail": "items_count=3"
+    },
+    {
+      "Name": "F5.4 金额正确",
+      "Status": "PASS",
+      "Detail": "totalAmount=6543.00"
+    },
+    {
+      "Name": "F5.5 订单项包含商品名称快照",
+      "Status": "PASS",
+      "Detail": "names=['流程测试耳机_20260608115026', '流程测试手机_20260608115026', '流程测试配件_20260608115026']"
+    },
+    {
+      "Name": "F6.1 查询订单列表成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "F6.2 返回分页信息",
+      "Status": "PASS",
+      "Detail": "total=2, page=1"
+    },
+    {
+      "Name": "F6.3 订单数 >= 2",
+      "Status": "PASS",
+      "Detail": "count=2"
+    },
+    {
+      "Name": "F6.4 按状态筛选成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "F7.1 查询订单详情成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "F7.2 返回 orderId",
+      "Status": "PASS",
+      "Detail": "orderId=o10035"
+    },
+    {
+      "Name": "F7.3 返回 status",
+      "Status": "PASS",
+      "Detail": "status=CREATED"
+    },
+    {
+      "Name": "F7.4 返回 totalAmount",
+      "Status": "PASS",
+      "Detail": "totalAmount=598.00"
+    },
+    {
+      "Name": "F7.5 返回 items",
+      "Status": "PASS",
+      "Detail": "items=[{'productId': 'p10033', 'name': '流程测试耳机_20260608115026', 'unitPrice': '299.00', 'quantity': 2}]"
+    },
+    {
+      "Name": "F7.6 返回 receiver",
+      "Status": "PASS",
+      "Detail": "receiver={'name': '张三', 'phone': '13800138000', 'address': '北京市朝阳区'}"
+    },
+    {
+      "Name": "F7.7 返回 createdAt",
+      "Status": "PASS",
+      "Detail": "createdAt=2026-06-08T03:50:26.999865Z"
+    },
+    {
+      "Name": "F7.8 订单项 productId",
+      "Status": "PASS",
+      "Detail": "productId=p10033"
+    },
+    {
+      "Name": "F7.9 订单项 name（快照）",
+      "Status": "PASS",
+      "Detail": "name=流程测试耳机_20260608115026"
+    },
+    {
+      "Name": "F7.10 订单项 unitPrice（快照）",
+      "Status": "PASS",
+      "Detail": "unitPrice=299.00"
+    },
+    {
+      "Name": "F7.11 订单项 quantity",
+      "Status": "PASS",
+      "Detail": "quantity=2"
+    },
+    {
+      "Name": "F7.12 收货人姓名",
+      "Status": "PASS",
+      "Detail": "name=张三"
+    },
+    {
+      "Name": "F7.13 收货人电话",
+      "Status": "PASS",
+      "Detail": "phone=13800138000"
+    },
+    {
+      "Name": "F7.14 收货地址",
+      "Status": "PASS",
+      "Detail": "address=北京市朝阳区"
+    },
+    {
+      "Name": "F8.1 支付订单成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "F8.2 返回 orderId",
+      "Status": "PASS",
+      "Detail": "orderId=o10035"
+    },
+    {
+      "Name": "F8.3 返回 paymentId",
+      "Status": "PASS",
+      "Detail": "paymentId=pay10010"
+    },
+    {
+      "Name": "F8.4 paymentId 以 pay 开头",
+      "Status": "PASS",
+      "Detail": "paymentId=pay10010"
+    },
+    {
+      "Name": "F8.5 返回 status=PAID",
+      "Status": "PASS",
+      "Detail": "status=PAID"
+    },
+    {
+      "Name": "F8.6 返回 amount",
+      "Status": "PASS",
+      "Detail": "amount=598.00"
+    },
+    {
+      "Name": "F9.1 支付后订单状态为 PAID",
+      "Status": "PASS",
+      "Detail": "status=PAID"
+    },
+    {
+      "Name": "F9.2 库存已扣减（200-3=197）",
+      "Status": "PASS",
+      "Detail": "stock=197"
+    },
+    {
+      "Name": "F9.3 销量已增加",
+      "Status": "PASS",
+      "Detail": "sales=3"
+    },
+    {
+      "Name": "F10.1 其他买家无权查看订单（403）",
+      "Status": "PASS",
+      "Detail": "status_code=403"
+    },
+    {
+      "Name": "F10.2 其他买家无权支付订单（403）",
+      "Status": "PASS",
+      "Detail": "status_code=403"
+    },
+    {
+      "Name": "F10.3 未携带 Token 查询订单（401）",
+      "Status": "PASS",
+      "Detail": "status_code=401"
+    },
+    {
+      "Name": "F11.1 orderId 格式为 o+数字",
+      "Status": "PASS",
+      "Detail": "orderId=o10035"
+    },
+    {
+      "Name": "F11.2 多商品订单 orderId 格式为 o+数字",
+      "Status": "PASS",
+      "Detail": "orderId=o10036"
+    }
+  ]
+}

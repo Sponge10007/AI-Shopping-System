@@ -2,7 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { listAdminUsers, updateUserStatus } from '../services/api'
 
-const users = ref<Array<{ user_id: string; username: string;phone:string; role: string; status: string ; created_at:string ;}>>([])
+const users = ref<Array<{ user_id: string; username: string;phone?:string; role: string; status: string ; created_at?:string ;}>>([])
 
 onMounted(async () => {
   try{
@@ -75,7 +75,7 @@ function formatDate(dt?: string) {
               <tr v-for="u in admins" :key="u.user_id" style="border-bottom:1px solid #f3f4f6">
                 <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.user_id }}</td>
                 <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.username }}</td>
-                <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.phone }}</td>
+                <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.phone || '-' }}</td>
                 <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ formatDate(u.created_at) }}</td>
                 <td style="padding:10px;white-space:nowrap;text-align:center">{{ u.status }}</td>
                 <td style="padding:10px;white-space:nowrap;text-align:center"><button class="soft-button" @click="toggle(u)">{{ u.status === 'ACTIVE' ? '禁用' : '激活' }}</button></td>
@@ -111,7 +111,7 @@ function formatDate(dt?: string) {
               <tr v-for="u in merchants" :key="u.user_id" style="border-bottom:1px solid #f3f4f6">
                 <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.user_id }}</td>
                 <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.username }}</td>
-                <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.phone }}</td>
+                <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.phone || '-' }}</td>
                 <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ formatDate(u.created_at) }}</td>
                 <td style="padding:10px;white-space:nowrap;text-align:center">{{ u.status }}</td>
                 <td style="padding:10px;white-space:nowrap;text-align:center"><button class="soft-button" @click="toggle(u)">{{ u.status === 'ACTIVE' ? '禁用' : '激活' }}</button></td>
@@ -147,7 +147,7 @@ function formatDate(dt?: string) {
               <tr v-for="u in customers" :key="u.user_id" style="border-bottom:1px solid #f3f4f6">
                 <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.user_id }}</td>
                 <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.username }}</td>
-                <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.phone }}</td>
+                <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ u.phone || '-' }}</td>
                 <td style="padding:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">{{ formatDate(u.created_at) }}</td>
                 <td style="padding:10px;white-space:nowrap;text-align:center">{{ u.status }}</td>
                 <td style="padding:10px;white-space:nowrap;text-align:center"><button class="soft-button" @click="toggle(u)">{{ u.status === 'ACTIVE' ? '禁用' : '激活' }}</button></td>

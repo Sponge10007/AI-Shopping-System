@@ -1,0 +1,170 @@
+[
+  {
+    "case_id": "F1.1",
+    "name": "商家注册成功",
+    "passed": true,
+    "detail": "username=flow_merchant_20260608152248"
+  },
+  {
+    "case_id": "F1.2",
+    "name": "商家 userId 以 m 开头",
+    "passed": true,
+    "detail": "userId=m10158"
+  },
+  {
+    "case_id": "F1.3",
+    "name": "商家登录成功获取 Token",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F2.1",
+    "name": "商家上传商品图片成功",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F2.2",
+    "name": "返回图片 URL",
+    "passed": true,
+    "detail": "url=/uploads/images/products/2026/06/29c20330-99d7-4b45-b2fd-7f528d0747d7.jpg"
+  },
+  {
+    "case_id": "F2.3",
+    "name": "返回 fileId",
+    "passed": true,
+    "detail": "fileId=bb7ffade-5957-4afc-8bcd-480cca0f5541"
+  },
+  {
+    "case_id": "F2.4",
+    "name": "URL 格式正确（以 /uploads/ 开头）",
+    "passed": true,
+    "detail": "url=/uploads/images/products/2026/06/29c20330-99d7-4b45-b2fd-7f528d0747d7.jpg"
+  },
+  {
+    "case_id": "F3.1",
+    "name": "普通用户注册成功",
+    "passed": true,
+    "detail": "username=flow_customer_20260608152248"
+  },
+  {
+    "case_id": "F3.2",
+    "name": "普通用户 userId 以 u 开头",
+    "passed": true,
+    "detail": "userId=u10159"
+  },
+  {
+    "case_id": "F3.3",
+    "name": "普通用户登录成功获取 Token",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F4.1",
+    "name": "记录 VIEW 行为成功",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F4.2",
+    "name": "返回 accepted=true",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F5.1",
+    "name": "记录 SEARCH 行为成功",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F5.2",
+    "name": "返回 accepted=true",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F6.1",
+    "name": "记录 ADD_TO_CART 行为成功",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F6.2",
+    "name": "返回 accepted=true",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F7.1",
+    "name": "商家访问管理员用户列表返回 403",
+    "passed": true,
+    "detail": "status_code=403"
+  },
+  {
+    "case_id": "F7.2",
+    "name": "商家修改用户状态返回 403",
+    "passed": true,
+    "detail": "status_code=403"
+  },
+  {
+    "case_id": "F7.3",
+    "name": "商家查看平台概览返回 403",
+    "passed": true,
+    "detail": "status_code=403"
+  },
+  {
+    "case_id": "F7.4",
+    "name": "未携带 Token 访问管理员接口返回 401",
+    "passed": true,
+    "detail": "status_code=401"
+  },
+  {
+    "case_id": "F8.1",
+    "name": "上传响应包含 url 字段",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F8.2",
+    "name": "上传响应包含 fileId 字段",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F8.3",
+    "name": "上传响应包含 filename 字段",
+    "passed": true,
+    "detail": "UploadResponse 包含 fileId/url/filename/size 四个字段"
+  },
+  {
+    "case_id": "F9.1",
+    "name": "记录 PURCHASE 行为成功",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F9.2",
+    "name": "行为记录响应包含 accepted 字段",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F10.1",
+    "name": "403 响应包含 success 字段",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F10.2",
+    "name": "403 响应包含 code 字段",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "case_id": "F10.3",
+    "name": "403 响应包含 message 字段",
+    "passed": true,
+    "detail": ""
+  }
+]

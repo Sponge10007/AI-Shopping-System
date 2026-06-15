@@ -1,0 +1,34 @@
+{
+    "Passed":  5,
+    "Timestamp":  "2026-06-07 11:34:37",
+    "Total":  5,
+    "Results":  [
+                    {
+                        "Name":  "TC-R001: 正常注册 CUSTOMER 用户",
+                        "Status":  "PASS",
+                        "Detail":  "success=True"
+                    },
+                    {
+                        "Name":  "TC-R002: 正常注册 MERCHANT 用户",
+                        "Status":  "PASS",
+                        "Detail":  "success=True"
+                    },
+                    {
+                        "Name":  "TC-R003: 重复用户名注册",
+                        "Status":  "PASS",
+                        "Detail":  "success=False, code=DUPLICATE_RESOURCE"
+                    },
+                    {
+                        "Name":  "TC-R004: 重复手机号注册",
+                        "Status":  "PASS",
+                        "Detail":  "success=False, code=DUPLICATE_RESOURCE"
+                    },
+                    {
+                        "Name":  "TC-R005: 缺少必填字段（无 username）",
+                        "Status":  "PASS",
+                        "Detail":  "success=False, code=INVALID_ARGUMENT"
+                    }
+                ],
+    "Failed":  0,
+    "TestSuite":  "注册接口测试"
+}

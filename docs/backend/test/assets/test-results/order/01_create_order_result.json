@@ -1,0 +1,134 @@
+{
+  "TestSuite": "订单创建接口测试",
+  "Timestamp": "2026-06-08 11:50:23",
+  "Total": 25,
+  "Passed": 25,
+  "Failed": 0,
+  "Results": [
+    {
+      "Name": "准备: 商家注册成功",
+      "Status": "PASS",
+      "Detail": "username=oc_merchant_20260608115022"
+    },
+    {
+      "Name": "准备: 商家登录成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "准备: 买家注册成功",
+      "Status": "PASS",
+      "Detail": "username=oc_buyer_20260608115022"
+    },
+    {
+      "Name": "准备: 买家登录成功",
+      "Status": "PASS",
+      "Detail": ""
+    },
+    {
+      "Name": "TC-OC001: 创建订单成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "TC-OC001: 返回 orderId",
+      "Status": "PASS",
+      "Detail": "orderId=o10025"
+    },
+    {
+      "Name": "TC-OC001: orderId 以 o 开头",
+      "Status": "PASS",
+      "Detail": "orderId=o10025"
+    },
+    {
+      "Name": "TC-OC001: 返回 status=CREATED",
+      "Status": "PASS",
+      "Detail": "status=CREATED"
+    },
+    {
+      "Name": "TC-OC001: 返回 totalAmount",
+      "Status": "PASS",
+      "Detail": "totalAmount=199.98"
+    },
+    {
+      "Name": "TC-OC001: 返回 items",
+      "Status": "PASS",
+      "Detail": "items_count=1"
+    },
+    {
+      "Name": "TC-OC001: 返回 receiver",
+      "Status": "PASS",
+      "Detail": "receiver={'name': '张三', 'phone': '13800138000', 'address': '北京市朝阳区测试地址1'}"
+    },
+    {
+      "Name": "TC-OC001: 返回 createdAt",
+      "Status": "PASS",
+      "Detail": "createdAt=2026-06-08T11:50:23.2937498+08:00"
+    },
+    {
+      "Name": "TC-OC001: 金额正确",
+      "Status": "PASS",
+      "Detail": "totalAmount=199.98"
+    },
+    {
+      "Name": "TC-OC001: 订单项 productId",
+      "Status": "PASS",
+      "Detail": "productId=p10028"
+    },
+    {
+      "Name": "TC-OC001: 订单项 name",
+      "Status": "PASS",
+      "Detail": "name=订单测试商品A_20260608115022"
+    },
+    {
+      "Name": "TC-OC001: 订单项 unitPrice",
+      "Status": "PASS",
+      "Detail": "unitPrice=99.99"
+    },
+    {
+      "Name": "TC-OC001: 订单项 quantity=2",
+      "Status": "PASS",
+      "Detail": "quantity=2"
+    },
+    {
+      "Name": "TC-OC002: 创建多商品订单成功",
+      "Status": "PASS",
+      "Detail": "status_code=200"
+    },
+    {
+      "Name": "TC-OC002: 返回2个订单项",
+      "Status": "PASS",
+      "Detail": "items_count=2"
+    },
+    {
+      "Name": "TC-OC002: 金额正确",
+      "Status": "PASS",
+      "Detail": "totalAmount=696.99"
+    },
+    {
+      "Name": "TC-OC003: 返回 400",
+      "Status": "PASS",
+      "Detail": "status_code=400"
+    },
+    {
+      "Name": "TC-OC004: 返回 404",
+      "Status": "PASS",
+      "Detail": "status_code=404"
+    },
+    {
+      "Name": "TC-OC005: 库存不足返回 409",
+      "Status": "PASS",
+      "Detail": "status_code=409"
+    },
+    {
+      "Name": "TC-OC006: 返回 401",
+      "Status": "PASS",
+      "Detail": "status_code=401"
+    },
+    {
+      "Name": "TC-OC007: 返回 400",
+      "Status": "PASS",
+      "Detail": "status_code=400"
+    }
+  ]
+}

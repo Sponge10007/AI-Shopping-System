@@ -1,0 +1,29 @@
+{
+    "Passed":  4,
+    "Timestamp":  "2026-06-07 11:34:37",
+    "Total":  4,
+    "Results":  [
+                    {
+                        "Name":  "TC-O001: 正常登出（携带有效 Token）",
+                        "Status":  "PASS",
+                        "Detail":  "success=True"
+                    },
+                    {
+                        "Name":  "TC-O002: 未携带 Token 登出（简化实现）",
+                        "Status":  "PASS",
+                        "Detail":  "success=True"
+                    },
+                    {
+                        "Name":  "TC-O003: 携带无效 Token 登出（简化实现）",
+                        "Status":  "PASS",
+                        "Detail":  "success=True"
+                    },
+                    {
+                        "Name":  "TC-O004: 验证登出响应结构",
+                        "Status":  "PASS",
+                        "Detail":  "响应结构完整"
+                    }
+                ],
+    "Failed":  0,
+    "TestSuite":  "登出接口测试"
+}

@@ -1,0 +1,130 @@
+{
+  "test_time": "2026-06-08 15:42:42",
+  "total": 20,
+  "passed": 20,
+  "failed": 0,
+  "pass_rate": "100.0%",
+  "elapsed_seconds": 0.88,
+  "results": [
+    {
+      "case_id": "TC-IS001",
+      "name": "获取单个商品 AI 摘要成功",
+      "passed": true,
+      "detail": "status_code=200, productId=p10042"
+    },
+    {
+      "case_id": "TC-IS002",
+      "name": "AI 摘要返回正确的 productId",
+      "passed": true,
+      "detail": "expected=p10042, actual=p10042"
+    },
+    {
+      "case_id": "TC-IS003",
+      "name": "AI 摘要包含 summaryText 字段",
+      "passed": true,
+      "detail": "summaryText_length=169"
+    },
+    {
+      "case_id": "TC-IS004",
+      "name": "AI 摘要包含商品名称",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "TC-IS005",
+      "name": "AI 摘要包含价格信息",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "TC-IS006",
+      "name": "AI 摘要包含商品描述",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "TC-IS007",
+      "name": "AI 摘要包含标签/特点",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "TC-IS008",
+      "name": "AI 摘要包含分类信息",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "TC-IS009",
+      "name": "AI 摘要包含评分和销量",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "TC-IS010",
+      "name": "AI 摘要包含详情页链接",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "TC-IS011",
+      "name": "AI 摘要包含商品状态",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "case_id": "TC-IS012",
+      "name": "获取不存在的商品 AI 摘要返回 404",
+      "passed": true,
+      "detail": "status_code=404"
+    },
+    {
+      "case_id": "TC-IS013",
+      "name": "批量获取商品 AI 摘要成功",
+      "passed": true,
+      "detail": "status_code=200"
+    },
+    {
+      "case_id": "TC-IS014",
+      "name": "批量摘要返回 items 列表",
+      "passed": true,
+      "detail": "expected_count=2, actual_count=2"
+    },
+    {
+      "case_id": "TC-IS015",
+      "name": "批量摘要（部分商品不存在）",
+      "passed": true,
+      "detail": "total_items=4, failed_count=2"
+    },
+    {
+      "case_id": "TC-IS016",
+      "name": "批量摘要传入空列表返回 400",
+      "passed": true,
+      "detail": "status_code=400"
+    },
+    {
+      "case_id": "TC-IS017",
+      "name": "未携带 Internal-Token 返回 403",
+      "passed": true,
+      "detail": "status_code=403"
+    },
+    {
+      "case_id": "TC-IS018",
+      "name": "携带错误的 Internal-Token 返回 403",
+      "passed": true,
+      "detail": "status_code=403"
+    },
+    {
+      "case_id": "TC-IS019",
+      "name": "AI 摘要响应结构完整",
+      "passed": true,
+      "detail": "success=True, code=True, message=True, data=True, traceId=True"
+    },
+    {
+      "case_id": "TC-IS020",
+      "name": "批量 AI 摘要响应结构完整",
+      "passed": true,
+      "detail": "success=True, code=True, data=True, items=True"
+    }
+  ]
+}
