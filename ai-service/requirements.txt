@@ -1,6 +1,17 @@
+# Lightweight HTTP/test dependencies
 fastapi==0.115.5
 uvicorn[standard]==0.32.0
 pydantic==2.9.2
 pydantic-settings==2.6.1
 httpx==0.27.2
 pytest==8.3.3
+
+# Optional vision-search dependencies used by app/core/image_ai.py
+langchain-core==0.3.80
+langchain-openai==0.3.35
+
+# Vector/image search runtime dependencies. These are imported lazily so
+# /health and chat can still run when vector search is not configured.
+chromadb==0.5.23
+numpy==1.26.4
+sentence-transformers==3.3.1

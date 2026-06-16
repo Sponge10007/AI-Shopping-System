@@ -78,8 +78,20 @@ public class AiServiceClient {
                 "session_id", sessionId,
                 "content", content
         );
-        return postForData("/internal/v1/ai/chat/messages", body, new ParameterizedTypeReference<AiChatResult>() {
-        }, AiChatResult.unavailable());
+        try {
+            AiEnvelope<Map<String, Object>> response = restClient.post()
+                    .uri("/internal/v1/ai/chat/messages")
+                    .body(body)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+            if (response == null || !response.ok() || response.data() == null) {
+                return AiChatResult.unavailable();
+            }
+            return mapChatResult(response.data());
+        } catch (RestClientException exception) {
+            return AiChatResult.unavailable();
+        }
     }
 
     public boolean deleteChatHistory(String userId, String sessionId) {
@@ -118,6 +130,29 @@ public class AiServiceClient {
         } catch (RestClientException exception) {
             return fallback;
         }
+    }
+
+    private static AiChatResult mapChatResult(Map<String, Object> data) {
+        Object answer = data.get("answer");
+        Object rawAnswer = data.get("raw_answer");
+        return new AiChatResult(
+                answer instanceof String text && !text.isBlank()
+                        ? text
+                        : "AI 助手暂时不可用，请稍后再试。",
+                stringList(data.get("image_list")),
+                stringList(data.get("link_list")),
+                rawAnswer instanceof String text ? text : null
+        );
+    }
+
+    private static List<String> stringList(Object value) {
+        if (!(value instanceof List<?> items)) {
+            return List.of();
+        }
+        return items.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .toList();
     }
 
     private static int normalizeLimit(Integer limit, int defaultLimit) {

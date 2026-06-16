@@ -5,15 +5,24 @@ import type { ProductSummary } from '../services/api'
 defineProps<{
   products: ProductSummary[]
 }>()
+
+const emit = defineEmits<{
+  select: [product: ProductSummary]
+  add: [product: ProductSummary]
+}>()
 </script>
 
 <template>
-  <div class="product-grid">
+  <div v-if="products.length === 0" class="empty-state">
+    <p>暂无商品，试试其他关键词或分类</p>
+  </div>
+  <div v-else class="product-grid">
     <RouterLink
       v-for="product in products"
       :key="product.product_id"
       :to="`/detail/${product.product_id}`"
       class="product-card"
+      @click="emit('select', product)"
     >
       <div class="product-media">
         <img :src="product.image_url" :alt="product.name" loading="lazy" />
@@ -33,9 +42,14 @@ defineProps<{
         <p>{{ product.reason || '符合你的空间美学与使用偏好' }}</p>
         <div class="product-footer">
           <strong>¥{{ product.price }}</strong>
-          <span class="circle-button" :title="`加入购物车：${product.name}`">
+          <button
+            type="button"
+            class="circle-button"
+            :title="`加入购物车：${product.name}`"
+            @click.prevent.stop="emit('add', product)"
+          >
             <Plus :size="18" />
-          </span>
+          </button>
         </div>
       </div>
     </RouterLink>

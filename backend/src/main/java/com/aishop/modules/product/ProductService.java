@@ -1,5 +1,7 @@
 package com.aishop.modules.product;
 
+import com.aishop.common.exception.BusinessException;
+import com.aishop.common.exception.ErrorCode;
 import com.aishop.common.response.PageResponse;
 import com.aishop.modules.product.dto.CreateProductRequest;
 import com.aishop.modules.product.dto.ProductMutationResponse;
@@ -9,6 +11,7 @@ import com.aishop.modules.product.dto.RestockRequest;
 import com.aishop.modules.product.dto.RestockResponse;
 import com.aishop.modules.product.dto.UpdateProductRequest;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -65,7 +68,25 @@ public class ProductService {
     }
 
     public ProductResponse getProduct(String productId) {
-        return sampleProduct(productId);
+        try {
+            ProductResponse product = jdbcTemplate.queryForObject("""
+                            SELECT p.product_id, p.merchant_id, p.name, p.description, p.category_id,
+                                   p.category_name, p.price, p.stock, p.sales, p.rating, p.status,
+                                   p.tags, p.created_at, p.updated_at
+                            FROM products p
+                            WHERE p.product_id = ?
+                            """,
+                    this::mapProduct,
+                    productId);
+            if (product == null) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "商品不存在");
+            }
+            return product;
+        } catch (EmptyResultDataAccessException exception) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "商品不存在");
+        } catch (DataAccessException exception) {
+            return sampleProduct(productId);
+        }
     }
 
     public PageResponse<ProductResponse> listMerchantProducts(String status, int page, int size) {
@@ -223,6 +244,47 @@ public class ProductService {
         );
     }
 
+    private ProductResponse mapProduct(ResultSet rs, int rowNum) throws SQLException {
+        String productId = rs.getString("product_id");
+        BigDecimal price = rs.getBigDecimal("price");
+        BigDecimal rating = rs.getBigDecimal("rating");
+        List<String> imageUrls = productImages(productId);
+        if (imageUrls.isEmpty()) {
+            imageUrls = List.of("https://example.com/products/" + productId + "/main.jpg");
+        }
+        return new ProductResponse(
+                productId,
+                rs.getString("merchant_id"),
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getString("category_id"),
+                rs.getString("category_name"),
+                price == null ? "0.00" : price.toPlainString(),
+                rs.getInt("stock"),
+                rs.getInt("sales"),
+                rating == null ? 0.0 : rating.doubleValue(),
+                rs.getString("status"),
+                splitTags(rs.getString("tags")),
+                imageUrls,
+                "https://example.com/products/" + productId,
+                rs.getObject("created_at", OffsetDateTime.class),
+                rs.getObject("updated_at", OffsetDateTime.class)
+        );
+    }
+
+    private List<String> productImages(String productId) {
+        return jdbcTemplate.query(
+                """
+                        SELECT image_url
+                        FROM product_images
+                        WHERE product_id = ?
+                        ORDER BY sort_order, id
+                        """,
+                (rs, rowNum) -> rs.getString("image_url"),
+                productId
+        );
+    }
+
     private ProductSummaryResponse withScoreAndReason(ProductSummaryResponse source, Double score, String reason) {
         return new ProductSummaryResponse(
                 source.productId(),
@@ -271,23 +333,61 @@ public class ProductService {
 
     private ProductResponse sampleProduct(String productId) {
         OffsetDateTime now = OffsetDateTime.now();
-        return new ProductResponse(
-                productId,
-                "m10001",
-                "蓝牙降噪耳机",
-                "适合通勤和学习的主动降噪蓝牙耳机",
-                "c_headphone",
-                "耳机",
-                "299.00",
-                120,
-                320,
-                4.8,
-                "ON_SALE",
-                List.of("蓝牙", "降噪", "通勤"),
-                List.of("https://example.com/products/" + productId + "/main.jpg"),
-                "https://example.com/products/" + productId,
-                now,
-                now
-        );
+        return switch (productId) {
+            case "10002" -> new ProductResponse(
+                    productId,
+                    "m10001",
+                    "智能保温杯",
+                    "适合办公和通勤的智能保温杯，支持温度显示，便携防漏。",
+                    "c_home",
+                    "家居",
+                    "129.00",
+                    80,
+                    210,
+                    4.6,
+                    "ON_SALE",
+                    List.of("办公", "保温", "便携"),
+                    List.of("https://example.com/products/" + productId + "/main.jpg"),
+                    "https://example.com/products/" + productId,
+                    now,
+                    now
+            );
+            case "10003" -> new ProductResponse(
+                    productId,
+                    "m10001",
+                    "轻量运动背包",
+                    "适合短途出行和健身的轻量运动背包，分区收纳，防泼水。",
+                    "c_outdoor",
+                    "户外",
+                    "189.00",
+                    64,
+                    148,
+                    4.7,
+                    "ON_SALE",
+                    List.of("运动", "收纳", "轻量"),
+                    List.of("https://example.com/products/" + productId + "/main.jpg"),
+                    "https://example.com/products/" + productId,
+                    now,
+                    now
+            );
+            default -> new ProductResponse(
+                    productId,
+                    "m10001",
+                    "蓝牙降噪耳机",
+                    "适合通勤和学习的主动降噪蓝牙耳机，黑色头戴式，支持长续航。",
+                    "c_headphone",
+                    "耳机",
+                    "299.00",
+                    120,
+                    320,
+                    4.8,
+                    "ON_SALE",
+                    List.of("蓝牙", "降噪", "通勤"),
+                    List.of("https://example.com/products/" + productId + "/main.jpg"),
+                    "https://example.com/products/" + productId,
+                    now,
+                    now
+            );
+        };
     }
 }

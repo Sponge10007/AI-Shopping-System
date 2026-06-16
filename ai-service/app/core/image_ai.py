@@ -3,12 +3,13 @@ import json
 import mimetypes
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
-from core.labelDB import LabelDB
+if TYPE_CHECKING:
+    from core.labelDB import LabelDB
 
 
 class ImageAI:
@@ -29,7 +30,7 @@ class ImageAI:
         api_key: str,
         model: str,
         base_url: str,
-        label_db: Optional[LabelDB] = None,
+        label_db: Optional["LabelDB"] = None,
     ):
         if not api_key:
             raise ValueError("视觉模型 api_key 不能为空")
@@ -38,12 +39,18 @@ class ImageAI:
         if not base_url:
             raise ValueError("视觉模型 base_url 不能为空")
 
-        self.label_db = label_db or LabelDB()
+        if label_db is None:
+            from core.labelDB import LabelDB
+
+            label_db = LabelDB()
+        self.label_db = label_db
         self.vision_llm = ChatOpenAI(
             api_key=api_key,
             base_url=base_url,
             model=model,
             temperature=0.1,
+            timeout=15,
+            max_retries=0,
         )
 
     def image_search(
@@ -211,7 +218,7 @@ def image_search(
 
     image_ai = ImageAI(
         api_key=api_key or os.getenv("IMAGE_AI_API_KEY") or os.getenv("DEEPSEEK_API_KEY", ""),
-        model=model or os.getenv("IMAGE_AI_MODEL", "deepseek-v4-flash"),
+        model=model or os.getenv("IMAGE_AI_MODEL", "deepseek-chat"),
         base_url=base_url or os.getenv("IMAGE_AI_BASE_URL") or os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
     )
     return image_ai.image_search(

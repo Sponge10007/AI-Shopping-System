@@ -639,7 +639,7 @@ export async function deleteMerchantProduct(productId: string) {
 
 export async function uploadProductImage(file: File): Promise<{ url: string; object_key: string }> {
   const fd = new FormData()
-  fd.append('file', file)
+  fd.append('image', file)
   return requestMultipart('/uploads/product-images', fd)
 }
 
