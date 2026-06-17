@@ -8,11 +8,6 @@ from urllib.parse import parse_qs, unquote, urlparse
 from urllib import request as url_request
 from urllib.error import HTTPError, URLError
 
-from core.image_ai import ImageAI
-from core.labelDB import LabelDB
-from core.llmchat import init as init_llm_chat
-
-
 """
 Python 侧 HTTP 接口服务。
 
@@ -24,7 +19,7 @@ Python 侧 HTTP 接口服务。
 
 启动示例：
     set DEEPSEEK_API_KEY=你的key
-    set DEEPSEEK_MODEL=deepseek-v4-flash
+    set DEEPSEEK_MODEL=deepseek-chat
     set JAVA_PRODUCT_SEARCH_URL=http://127.0.0.1:8080/product/searchById
     python -m api.py_api_server
 
@@ -81,7 +76,7 @@ load_env_file()
 HOST = os.getenv("PY_API_HOST", "127.0.0.1")
 PORT = int(os.getenv("PY_API_PORT", "9000"))
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 IMAGE_AI_API_KEY = os.getenv("IMAGE_AI_API_KEY", DEEPSEEK_API_KEY)
 IMAGE_AI_MODEL = os.getenv("IMAGE_AI_MODEL", DEEPSEEK_MODEL)
@@ -108,6 +103,8 @@ def get_label_db():
 
     global label_db
     if label_db is None:
+        from core.labelDB import LabelDB
+
         label_db = LabelDB()
     return label_db
 
@@ -119,6 +116,8 @@ def get_chat_app():
     if chat_app is None:
         if not DEEPSEEK_API_KEY:
             raise RuntimeError("缺少 DEEPSEEK_API_KEY 环境变量，无法初始化 llmChat。")
+
+        from core.llmchat import init as init_llm_chat
 
         chat_app = init_llm_chat(
             api_key=DEEPSEEK_API_KEY,
@@ -142,6 +141,8 @@ def get_image_ai_app():
     if image_ai_app is None:
         if not IMAGE_AI_API_KEY:
             raise RuntimeError("缺少 IMAGE_AI_API_KEY 或 DEEPSEEK_API_KEY，无法初始化 ImageAI。")
+
+        from core.image_ai import ImageAI
 
         image_ai_app = ImageAI(
             api_key=IMAGE_AI_API_KEY,
@@ -405,7 +406,7 @@ class PythonApiHandler(BaseHTTPRequestHandler):
         query = require_str(data, "query")
         user_id = str(data.get("user_id", "-1"))
         distance_threshold = float(data.get("distance_threshold", 0.9))
-        limit = int(data.get("limit", LabelDB.DEFAULT_SEARCH_LIMIT))
+        limit = int(data.get("limit", 50))
 
         return get_label_db().prod_search(
             user_id=user_id,

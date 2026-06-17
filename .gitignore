@@ -29,6 +29,8 @@ uploads/
 # Model
 ai-service/models
 ai-service/tests
+!ai-service/tests/
+!ai-service/tests/*.py
 
 #own-local-test
 .vscode/
@@ -39,3 +41,5 @@ message.txt
 ai-service/app/*.db
 ai-service/app/*.db.bak
 ai-service/app/chroma_db/
+
+AGENT.md

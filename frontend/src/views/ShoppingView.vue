@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Camera, Search, Sparkles } from 'lucide-vue-next'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import ProductGrid from '../components/ProductGrid.vue'
 import {
   getProductList,
@@ -20,14 +20,18 @@ const activeCategory = ref('全部')
 const searchMode = ref<'semantic' | 'image'>('semantic')
 const imageFile = ref<File | null>(null)
 const searchError = ref('')
+const focusProduct = computed(() => products.value[0])
 
 const categories = [
   { id: '', label: '全部' },
-  { id: 'c_digital', label: '数码周边' },
-  { id: 'c_home', label: '家居美学' },
-  { id: 'c_fashion', label: '穿搭灵感' },
-  { id: 'c_sports', label: '户外运动' },
-  { id: 'c_office', label: '办公好物' },
+  { id: 'c_headphone', label: '耳机' },
+  { id: 'c_phone', label: '手机' },
+  { id: 'c_computer', label: '电脑' },
+  { id: 'c_accessory', label: '配件' },
+  { id: 'c_home', label: '家居' },
+  { id: 'c_food', label: '食品' },
+  { id: 'c_clothing', label: '服装' },
+  { id: 'c_books', label: '图书' },
 ]
 
 onMounted(loadHome)
@@ -171,15 +175,15 @@ function handleImageUpload(event: Event) {
       </div>
 
       <div class="discovery-grid">
-        <article class="feature-card">
+        <article v-if="focusProduct" class="feature-card">
           <div>
             <span>今日焦点</span>
-            <h3>下一代音频体验</h3>
-            <p>AI 会根据通勤、办公和听歌习惯，匹配更合适的声学配置。</p>
-            <RouterLink to="/detail/10001" class="white-button">了解详情</RouterLink>
+            <h3>{{ focusProduct.name }}</h3>
+            <p>{{ focusProduct.reason || `热度 ${focusProduct.sales ?? 0}，评分 ${focusProduct.rating ?? '暂无'}` }}</p>
+            <RouterLink :to="`/detail/${focusProduct.product_id}`" class="white-button">了解详情</RouterLink>
           </div>
           <div class="feature-image">
-            <img :src="products[0]?.image_url || ''" alt="蓝牙降噪耳机" />
+            <img :src="focusProduct.image_url" :alt="focusProduct.name" />
           </div>
         </article>
 

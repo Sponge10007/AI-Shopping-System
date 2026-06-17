@@ -2,8 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { listAdminUsers, updateUserStatus } from '../services/api'
 
-const users = ref<Array<{ user_id: string; username: string;phone?:string; role: string; status: string ; created_at?:string ;}>>([])
-
+const users = ref<Array<{ user_id: string; username: string; phone?: string; role: string; status: string; created_at?: string }>>([])
 onMounted(async () => {
   try{
     const data = await listAdminUsers()

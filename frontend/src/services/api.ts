@@ -159,24 +159,119 @@ const fallbackProducts: ProductSummary[] = [
   },
 ]
 
-const fallbackProductDetail: Product = {
-  product_id: '10001',
-  merchant_id: 'm10001',
-  name: '蓝牙降噪耳机',
-  description: '适合通勤和学习的主动降噪蓝牙耳机，支持蓝牙5.3，续航长达40小时，佩戴舒适。',
-  category_id: 'c_headphone',
-  category_name: '耳机',
-  price: '299.00',
-  stock: 120,
-  sales: 320,
-  rating: 4.8,
-  status: 'ON_SALE',
-  tags: ['蓝牙', '降噪', '通勤'],
-  image_urls: [
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=1200&q=80',
-  ],
-  detail_url: 'https://example.com/products/10001',
+const fallbackProductDetails: Product[] = [
+  {
+    product_id: '10001',
+    merchant_id: 'm10001',
+    name: '蓝牙降噪耳机',
+    description: '适合通勤和学习的主动降噪蓝牙耳机，支持蓝牙5.3，续航长达40小时，佩戴舒适。',
+    category_id: 'c_headphone',
+    category_name: '耳机',
+    price: '299.00',
+    stock: 120,
+    sales: 320,
+    rating: 4.8,
+    status: 'ON_SALE',
+    tags: ['蓝牙', '降噪', '通勤'],
+    image_urls: [
+      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=1200&q=80',
+    ],
+    detail_url: 'https://example.com/products/10001',
+  },
+  {
+    product_id: '10002',
+    merchant_id: 'm10001',
+    name: '智能保温杯',
+    description: '适合办公和通勤的智能保温杯，支持温度显示，便携防漏。',
+    category_id: 'c_home',
+    category_name: '家居',
+    price: '129.00',
+    stock: 80,
+    sales: 210,
+    rating: 4.6,
+    status: 'ON_SALE',
+    tags: ['办公', '保温', '便携'],
+    image_urls: [
+      'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=1200&q=80',
+    ],
+    detail_url: 'https://example.com/products/10002',
+  },
+  {
+    product_id: '10003',
+    merchant_id: 'm10001',
+    name: '轻量运动背包',
+    description: '适合短途出行和健身的轻量运动背包，分区收纳，防泼水。',
+    category_id: 'c_sports',
+    category_name: '户外',
+    price: '189.00',
+    stock: 64,
+    sales: 148,
+    rating: 4.7,
+    status: 'ON_SALE',
+    tags: ['运动', '收纳', '轻量'],
+    image_urls: [
+      'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=1200&q=80',
+    ],
+    detail_url: 'https://example.com/products/10003',
+  },
+]
+
+function fallbackProductDetail(productId: string): Product {
+  const found = fallbackProductDetails.find((item) => item.product_id === productId)
+  if (found) return found
+  return { ...fallbackProductDetails[0], product_id: productId }
+}
+
+function normalizeProductSummary(raw: any): ProductSummary {
+  const imageUrl = raw.image_url ?? raw.imageUrl ?? raw.imageUrls?.[0] ?? raw.image_urls?.[0] ?? ''
+  const productId = String(raw.product_id ?? raw.productId ?? '')
+  return {
+    product_id: productId,
+    name: raw.name ?? '',
+    price: String(raw.price ?? '0.00'),
+    stock: Number(raw.stock ?? 0),
+    image_url: imageUrl,
+    detail_url: raw.detail_url ?? raw.detailUrl,
+    sales: raw.sales,
+    rating: raw.rating,
+    tags: raw.tags ?? [],
+    score: raw.score,
+    reason: raw.reason,
+  }
+}
+
+function normalizeProduct(raw: any): Product {
+  const summary = normalizeProductSummary(raw)
+  const imageUrls = raw.image_urls ?? raw.imageUrls ?? (summary.image_url ? [summary.image_url] : [])
+  return {
+    product_id: summary.product_id,
+    merchant_id: raw.merchant_id ?? raw.merchantId ?? '',
+    name: summary.name,
+    description: raw.description ?? '',
+    category_id: raw.category_id ?? raw.categoryId ?? '',
+    category_name: raw.category_name ?? raw.categoryName ?? '',
+    price: summary.price,
+    stock: summary.stock,
+    sales: Number(raw.sales ?? 0),
+    rating: Number(raw.rating ?? 0),
+    status: raw.status ?? 'ON_SALE',
+    tags: raw.tags ?? [],
+    image_urls: imageUrls,
+    detail_url: summary.detail_url,
+    created_at: raw.created_at ?? raw.createdAt,
+    updated_at: raw.updated_at ?? raw.updatedAt,
+  }
+}
+
+function normalizePage<T>(raw: any, normalizeItem: (item: any) => T): PageResponse<T> {
+  return {
+    items: (raw.items ?? []).map(normalizeItem),
+    page: raw.page ?? 1,
+    size: raw.size ?? 20,
+    total: raw.total ?? raw.items?.length ?? 0,
+    has_next: raw.has_next ?? raw.hasNext ?? false,
+  }
 }
 
 const fallbackOrders: Order[] = [
@@ -350,12 +445,18 @@ export async function getProductList(params?: {
   try {
     const searchParams = new URLSearchParams()
     if (params) {
+      const backendParamNames: Record<string, string> = {
+        category_id: 'categoryId',
+        min_price: 'minPrice',
+        max_price: 'maxPrice',
+      }
       Object.entries(params).forEach(([k, v]) => {
-        if (v !== undefined && v !== '') searchParams.set(k, String(v))
+        if (v !== undefined && v !== '') searchParams.set(backendParamNames[k] ?? k, String(v))
       })
     }
     const qs = searchParams.toString()
-    return await request<PageResponse<ProductSummary>>(`/products${qs ? `?${qs}` : ''}`)
+    const page = await request<PageResponse<ProductSummary>>(`/products${qs ? `?${qs}` : ''}`)
+    return normalizePage(page, normalizeProductSummary)
   } catch {
     return { items: fallbackProducts, page: 1, size: 20, total: fallbackProducts.length, has_next: false }
   }
@@ -363,10 +464,10 @@ export async function getProductList(params?: {
 
 export async function getProductDetail(productId: string): Promise<Product> {
   try {
-    return await request<Product>(`/products/${productId}`)
+    const product = await request<Product>(`/products/${productId}`)
+    return normalizeProduct(product)
   } catch {
-    // fallback
-    return { ...fallbackProductDetail, product_id: productId }
+    return fallbackProductDetail(productId)
   }
 }
 
@@ -379,10 +480,11 @@ export async function semanticSearch(query: string, filters?: {
   in_stock?: boolean
 }): Promise<{ query: string; relaxed: boolean; items: ProductSummary[] }> {
   try {
-    return await request('/search/semantic', {
+    const result = await request<{ query: string; relaxed: boolean; items: ProductSummary[] }>('/search/semantic', {
       method: 'POST',
       body: JSON.stringify({ query, filters, distance_threshold: 0.9, limit: 20 }),
     })
+    return { ...result, items: result.items.map(normalizeProductSummary) }
   } catch {
     return {
       query,
@@ -400,7 +502,11 @@ export async function imageSearch(file: File, limit?: number): Promise<{
   fd.append('image', file)
   if (limit) fd.append('limit', String(limit))
   try {
-    return await requestMultipart('/search/image', fd)
+    const result = await requestMultipart<{ detected_object?: string; detectedObject?: string; items: ProductSummary[] }>('/search/image', fd)
+    return {
+      detected_object: result.detected_object ?? result.detectedObject ?? '未知物体',
+      items: result.items.map(normalizeProductSummary),
+    }
   } catch {
     return {
       detected_object: '未知物体',
@@ -424,7 +530,8 @@ export async function homeRecommendations(limit?: number): Promise<{
 }> {
   try {
     const qs = limit ? `?limit=${limit}` : ''
-    return await request(`/recommendations/home${qs}`)
+    const result = await request<{ strategy: string; items: ProductSummary[] }>(`/recommendations/home${qs}`)
+    return { ...result, items: result.items.map(normalizeProductSummary) }
   } catch {
     return {
       strategy: 'FALLBACK',
@@ -639,7 +746,7 @@ export async function deleteMerchantProduct(productId: string) {
 
 export async function uploadProductImage(file: File): Promise<{ url: string; object_key: string }> {
   const fd = new FormData()
-  fd.append('file', file)
+  fd.append('image', file)
   return requestMultipart('/uploads/product-images', fd)
 }
 
