@@ -1,6 +1,8 @@
 package com.aishop.common.security.jwt;
 
 import com.aishop.common.security.CurrentUser;
+import com.aishop.infrastructure.persistence.entity.UserEntity;
+import com.aishop.infrastructure.persistence.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,9 +45,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
+                                   UserRepository userRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -86,9 +91,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 解析用户信息并设置到 SecurityContext
         try {
             String userId = jwtTokenProvider.getUserIdFromAccessToken(token);
-            String role = jwtTokenProvider.getRoleFromAccessToken(token);
+            UserEntity user = userRepository.findByUserId(userId).orElse(null);
 
-            CurrentUser currentUser = new CurrentUser(userId, role);
+            if (user == null) {
+                log.debug("JWT references a missing user: {}", userId);
+                writeError(response, HttpServletResponse.SC_UNAUTHORIZED,
+                        "UNAUTHORIZED", "用户不存在或已注销");
+                return;
+            }
+
+            if (!user.isActive()) {
+                log.info("Blocked disabled user token: userId={}, status={}", userId, user.getStatus());
+                writeError(response, HttpServletResponse.SC_FORBIDDEN,
+                        "FORBIDDEN", "账号已被禁用");
+                return;
+            }
+
+            CurrentUser currentUser = new CurrentUser(userId, user.getRole());
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(currentUser, null, Collections.emptyList());
 
@@ -102,6 +121,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void writeError(HttpServletResponse response,
+                            int status,
+                            String code,
+                            String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(
+                "{\"success\":false,\"code\":\"" + code + "\",\"message\":\"" + message + "\"}");
     }
 
     /**

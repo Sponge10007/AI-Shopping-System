@@ -1,5 +1,6 @@
 import json
 import os
+import secrets
 import traceback
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -38,8 +39,10 @@ Java 返回值可以是纯文本，也可以是 JSON：
     DELETE /internal/v1/ai/products/{product_id}/index
     POST   /internal/v1/ai/search/products
     POST   /internal/v1/ai/search/image
+    POST   /internal/v1/ai/compare/products
     GET    /internal/v1/ai/users/{user_id}/recommendations?maxnum=5
     POST   /internal/v1/ai/chat/messages
+    POST   /internal/v1/ai/chat/messages/stream
     DELETE /internal/v1/ai/chat/history
 """
 
@@ -85,6 +88,11 @@ PROMPT_FILE_PATH = os.getenv("PROMPT_FILE_PATH", "prompt.txt")
 CHAT_DB_PATH = os.getenv("CHAT_DB_PATH", "sqlite:///chat_history.db")
 JAVA_PRODUCT_SEARCH_URL = os.getenv("JAVA_PRODUCT_SEARCH_URL", "")
 BACKEND_INTERNAL_BASE_URL = os.getenv("BACKEND_INTERNAL_BASE_URL", "http://127.0.0.1:8080/internal/v1")
+INTERNAL_TOKEN = (
+    os.getenv("AI_INTERNAL_TOKEN")
+    or os.getenv("INTERNAL_TOKEN")
+    or "dev-internal-token"
+)
 
 
 # LabelDB 会加载 Embedding 模型，成本较高；这里使用懒加载，避免导入 API 模块时就
@@ -202,7 +210,11 @@ def fetch_product_detail_by_internal_summary(product_id: str) -> str:
 
     base_url = BACKEND_INTERNAL_BASE_URL.rstrip("/")
     url = f"{base_url}/products/{product_id}/ai-summary"
-    request = url_request.Request(url, method="GET")
+    request = url_request.Request(
+        url,
+        headers={"X-Internal-Token": INTERNAL_TOKEN},
+        method="GET",
+    )
 
     try:
         with url_request.urlopen(request, timeout=5) as response:
@@ -253,16 +265,68 @@ def json_response(handler: BaseHTTPRequestHandler, status: int, body: Dict[str, 
 
 
 def read_json_body(handler: BaseHTTPRequestHandler) -> Dict[str, Any]:
-    """读取请求体并解析 JSON；没有请求体时返回空字典。"""
+    """读取请求体并解析 JSON；兼容 Content-Length 和 chunked 编码。"""
 
-    content_length = int(handler.headers.get("Content-Length", "0"))
-    if content_length <= 0:
+    transfer_encoding = handler.headers.get("Transfer-Encoding", "").lower()
+    if "chunked" in transfer_encoding:
+        raw_bytes = read_chunked_body(handler)
+    else:
+        content_length = int(handler.headers.get("Content-Length", "0"))
+        if content_length <= 0:
+            return {}
+        if content_length > 12 * 1024 * 1024:
+            raise ValueError("请求体不能超过12MB")
+        raw_bytes = handler.rfile.read(content_length)
+
+    if not raw_bytes:
         return {}
 
-    raw_body = handler.rfile.read(content_length).decode("utf-8")
+    raw_body = raw_bytes.decode("utf-8")
     if not raw_body.strip():
         return {}
     return json.loads(raw_body)
+
+
+def read_chunked_body(handler: BaseHTTPRequestHandler) -> bytes:
+    """读取 HTTP/1.1 Transfer-Encoding: chunked 请求体。"""
+
+    chunks = []
+    total_size = 0
+    max_size = 12 * 1024 * 1024
+
+    while True:
+        size_line = handler.rfile.readline()
+        if not size_line:
+            raise ValueError("chunked 请求体提前结束")
+
+        size_text = size_line.split(b";", 1)[0].strip()
+        try:
+            chunk_size = int(size_text, 16)
+        except ValueError as exc:
+            raise ValueError("无效的 chunked 请求体") from exc
+
+        if chunk_size == 0:
+            # 读取可选 trailer，直到空行。
+            while True:
+                trailer = handler.rfile.readline()
+                if trailer in (b"", b"\r\n", b"\n"):
+                    break
+            break
+
+        total_size += chunk_size
+        if total_size > max_size:
+            raise ValueError("请求体不能超过12MB")
+
+        chunk = handler.rfile.read(chunk_size)
+        if len(chunk) != chunk_size:
+            raise ValueError("chunked 请求体内容不完整")
+        chunks.append(chunk)
+
+        ending = handler.rfile.read(2)
+        if ending != b"\r\n":
+            raise ValueError("无效的 chunked 请求分隔符")
+
+    return b"".join(chunks)
 
 
 def get_query_params(path: str) -> Dict[str, str]:
@@ -299,6 +363,9 @@ class PythonApiHandler(BaseHTTPRequestHandler):
                 json_response(self, 200, {"ok": True, "service": "python-api"})
                 return
 
+            if not self.require_internal_token(path):
+                return
+
             result = self.route_get(path, get_query_params(self.path))
             json_response(self, 200, {"ok": True, "data": result})
         except ValueError as exc:
@@ -311,8 +378,16 @@ class PythonApiHandler(BaseHTTPRequestHandler):
         """处理新增/更新商品索引、文本语义搜索和 AI 对话接口。"""
 
         try:
+            path = clean_path(self.path)
+            if not self.require_internal_token(path):
+                return
+
             data = read_json_body(self)
-            result = self.route_post(clean_path(self.path), data)
+            if path == "/internal/v1/ai/chat/messages/stream":
+                self.stream_chat(data)
+                return
+
+            result = self.route_post(path, data)
             json_response(self, 200, {"ok": True, "data": result})
         except ValueError as exc:
             json_response(self, 400, {"ok": False, "error": str(exc)})
@@ -325,6 +400,9 @@ class PythonApiHandler(BaseHTTPRequestHandler):
         """处理删除商品索引和清除对话历史接口。"""
 
         try:
+            if not self.require_internal_token(clean_path(self.path)):
+                return
+
             data = read_json_body(self)
             query = get_query_params(self.path)
             result = self.route_delete(clean_path(self.path), data, query)
@@ -334,6 +412,19 @@ class PythonApiHandler(BaseHTTPRequestHandler):
         except Exception as exc:
             traceback.print_exc()
             json_response(self, 500, {"ok": False, "error": str(exc)})
+
+    def require_internal_token(self, path: str) -> bool:
+        """校验内部接口令牌；健康检查保持公开。"""
+
+        if not path.startswith("/internal/v1/ai/"):
+            return True
+
+        supplied_token = self.headers.get("X-Internal-Token", "")
+        if INTERNAL_TOKEN and secrets.compare_digest(supplied_token, INTERNAL_TOKEN):
+            return True
+
+        json_response(self, 403, {"ok": False, "error": "内部服务认证失败"})
+        return False
 
     def route_get(self, path: str, query: Dict[str, str]) -> Optional[Any]:
         """根据 GET URL 分发到具体 Python 函数。"""
@@ -356,6 +447,8 @@ class PythonApiHandler(BaseHTTPRequestHandler):
             return self.search_product_ids(data)
         if path == "/internal/v1/ai/search/image":
             return self.search_products_by_image(data)
+        if path == "/internal/v1/ai/compare/products":
+            return self.compare_products(data)
         if path == "/internal/v1/ai/chat/messages":
             return self.chat(data)
         raise ValueError(f"未知 POST 接口: {path}")
@@ -443,6 +536,26 @@ class PythonApiHandler(BaseHTTPRequestHandler):
             raise ValueError("user_id 不能为空")
         return get_label_db().user_search(user_id=user_id, maxnum=maxnum)
 
+    def compare_products(self, data: Dict[str, Any]):
+        """调用大模型对 2 到 4 件商品生成结构化对比报告。"""
+
+        print(f"[AI Compare API] 收到请求字段: {sorted(data.keys())}")
+        user_id_value = data.get("user_id") or data.get("userId")
+        if user_id_value is None or str(user_id_value).strip() == "":
+            raise ValueError("缺少必填参数: user_id")
+        user_id = str(user_id_value)
+        intent = str(data.get("intent") or "综合比较价格、口碑、热度和实用性").strip()
+        products = data.get("products")
+        if not isinstance(products, list) or not 2 <= len(products) <= 4:
+            raise ValueError("products 必须包含2到4件商品")
+        if any(not isinstance(product, dict) for product in products):
+            raise ValueError("products 中的商品格式无效")
+        return get_chat_app().compare_products(
+            products=products,
+            intent=intent,
+            user_id=user_id,
+        )
+
     def chat(self, data: Dict[str, Any]):
         """对应 llmChat.chat(str content, str user_id, str session_id)。"""
 
@@ -450,6 +563,43 @@ class PythonApiHandler(BaseHTTPRequestHandler):
         user_id = require_str(data, "user_id")
         session_id = require_str(data, "session_id")
         return get_chat_app().chat(content=content, user_id=user_id, session_id=session_id)
+
+    def stream_chat(self, data: Dict[str, Any]) -> None:
+        """以 NDJSON 向 Java 服务逐段发送模型回复。"""
+
+        content = require_str(data, "content")
+        user_id = require_str(data, "user_id")
+        session_id = require_str(data, "session_id")
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/x-ndjson; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("X-Accel-Buffering", "no")
+        self.end_headers()
+
+        def send_event(event: Dict[str, Any]) -> None:
+            payload = json.dumps(event, ensure_ascii=False).encode("utf-8") + b"\n"
+            self.wfile.write(payload)
+            self.wfile.flush()
+
+        try:
+            result = get_chat_app().chat_stream(
+                content=content,
+                user_id=user_id,
+                session_id=session_id,
+                on_delta=lambda delta: send_event(
+                    {"type": "delta", "content": delta}
+                ),
+            )
+            send_event({"type": "done", "data": result})
+        except (BrokenPipeError, ConnectionResetError):
+            print(f"[AI Chat] 流式客户端已断开: session_id={session_id}")
+        except Exception as exc:
+            traceback.print_exc()
+            try:
+                send_event({"type": "error", "message": str(exc)})
+            except (BrokenPipeError, ConnectionResetError):
+                pass
 
     def delete_chat_history(
         self,

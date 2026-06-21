@@ -23,7 +23,7 @@ const router = createRouter({
     { path: '/', name: 'shopping', component: ShoppingView },
     { path: '/login', name: 'login', component: LoginView, meta: { guest: true } },
     { path: '/detail/:id', name: 'detail', component: ProductDetailView },
-    { path: '/compare', name: 'compare', component: CompareView },
+    { path: '/compare', name: 'compare', component: CompareView, meta: { auth: true } },
     { path: '/profile', name: 'profile', component: ProfileView, meta: { auth: true } },
     { path: '/orders', name: 'orders', component: OrdersView, meta: { auth: true } },
     { path: '/chat', name: 'chat', component: AIChatView, meta: { auth: true } },

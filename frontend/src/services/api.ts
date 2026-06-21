@@ -100,11 +100,47 @@ export interface ChatMessageResponse {
   related_products?: ProductSummary[]
 }
 
+export interface ChatHistoryMessage {
+  role: 'user' | 'assistant'
+  content: string
+  image_list?: string[]
+  link_list?: string[]
+  related_products?: ProductSummary[]
+  created_at?: string
+}
+
+export interface ChatStreamHandlers {
+  onDelta?: (content: string) => void
+}
+
 export interface PaymentResult {
   payment_id: string
   order_id: string
   payment_status: string
   paid_at?: string
+}
+
+export interface CompareItem {
+  product_id: string
+  score: number
+  verdict: string
+  strengths: string[]
+  weaknesses: string[]
+}
+
+export interface CompareDimension {
+  name: string
+  scores: Record<string, number>
+}
+
+export interface CompareReport {
+  source: 'AI' | 'RULE_BASED'
+  intent: string
+  winner_product_id: string
+  summary: string
+  highlights: string[]
+  items: CompareItem[]
+  dimensions: CompareDimension[]
 }
 
 export interface AdminOverview {
@@ -298,6 +334,7 @@ const fallbackOrders: Order[] = [
 // ── Core request helpers ─────────────────────────────
 
 const REQUEST_TIMEOUT_MS = 4000 // fail fast when backend is unreachable
+const IMAGE_SEARCH_TIMEOUT_MS = 35000
 
 /**
  * Tiny fetch-with-timeout wrapper.  Throws if the server doesn't respond
@@ -319,11 +356,11 @@ async function fetchWithTimeout(url: string, options?: RequestInit, timeoutMs = 
   }
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+async function request<T>(path: string, options?: RequestInit, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
   const response = await fetchWithTimeout(`${API_BASE}${path}`, {
     headers: getAuthHeaders(),
     ...options,
-  })
+  }, timeoutMs)
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
@@ -341,17 +378,25 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
  * Multipart request helper — does NOT set Content-Type so the browser can set
  * the boundary automatically.
  */
-async function requestMultipart<T>(path: string, formData: FormData): Promise<T> {
+async function requestMultipart<T>(
+  path: string,
+  formData: FormData,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<T> {
   const headers: Record<string, string> = {}
   if (sessionState.token) {
     headers['Authorization'] = `Bearer ${sessionState.token}`
   }
 
-  const response = await fetchWithTimeout(`${API_BASE}${path}`, {
-    method: 'POST',
-    headers,
-    body: formData,
-  })
+  const response = await fetchWithTimeout(
+    `${API_BASE}${path}`,
+    {
+      method: 'POST',
+      headers,
+      body: formData,
+    },
+    timeoutMs,
+  )
 
   if (!response.ok) {
     throw new Error(`Upload failed ${response.status}`)
@@ -501,17 +546,14 @@ export async function imageSearch(file: File, limit?: number): Promise<{
   const fd = new FormData()
   fd.append('image', file)
   if (limit) fd.append('limit', String(limit))
-  try {
-    const result = await requestMultipart<{ detected_object?: string; detectedObject?: string; items: ProductSummary[] }>('/search/image', fd)
-    return {
-      detected_object: result.detected_object ?? result.detectedObject ?? '未知物体',
-      items: result.items.map(normalizeProductSummary),
-    }
-  } catch {
-    return {
-      detected_object: '未知物体',
-      items: fallbackProducts.slice(0, 2),
-    }
+  const result = await requestMultipart<{ detected_object?: string; detectedObject?: string; items: ProductSummary[] }>(
+    '/search/image',
+    fd,
+    IMAGE_SEARCH_TIMEOUT_MS,
+  )
+  return {
+    detected_object: result.detected_object ?? result.detectedObject ?? '未知物体',
+    items: result.items.map(normalizeProductSummary),
   }
 }
 
@@ -557,6 +599,14 @@ export async function createChatSession(title: string): Promise<ChatSession> {
   }
 }
 
+export async function listChatSessions(): Promise<ChatSession[]> {
+  return request('/ai/chat/sessions')
+}
+
+export async function getChatMessages(sessionId: string): Promise<ChatHistoryMessage[]> {
+  return request(`/ai/chat/sessions/${sessionId}/messages`)
+}
+
 export async function sendChatMessage(
   sessionId: string,
   content: string,
@@ -577,6 +627,63 @@ export async function sendChatMessage(
   }
 }
 
+export async function streamChatMessage(
+  sessionId: string,
+  content: string,
+  handlers: ChatStreamHandlers = {},
+): Promise<ChatMessageResponse> {
+  const response = await fetch(`${API_BASE}/ai/chat/sessions/${sessionId}/messages/stream`, {
+    method: 'POST',
+    headers: {
+      ...getAuthHeaders(),
+      Accept: 'application/x-ndjson',
+    },
+    body: JSON.stringify({ content }),
+  })
+
+  if (!response.ok || !response.body) {
+    const body = await response.json().catch(() => ({}))
+    throw new Error((body as any).message || `AI stream ${response.status}`)
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let completed: ChatMessageResponse | null = null
+
+  const consumeLine = (line: string) => {
+    if (!line.trim()) return
+    const event = JSON.parse(line) as {
+      type: 'delta' | 'done' | 'error'
+      content?: string
+      message?: string
+      data?: ChatMessageResponse
+    }
+    if (event.type === 'delta' && event.content) {
+      handlers.onDelta?.(event.content)
+    } else if (event.type === 'done' && event.data) {
+      completed = event.data
+    } else if (event.type === 'error') {
+      throw new Error(event.message || 'AI 流式响应失败')
+    }
+  }
+
+  while (true) {
+    const { value, done } = await reader.read()
+    buffer += decoder.decode(value, { stream: !done })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() || ''
+    lines.forEach(consumeLine)
+    if (done) break
+  }
+  consumeLine(buffer)
+
+  if (!completed) {
+    throw new Error('AI 流式响应未正常结束')
+  }
+  return completed
+}
+
 export async function deleteChatHistory(sessionId: string): Promise<{
   session_id: string
   history_deleted: boolean
@@ -588,34 +695,26 @@ export async function deleteChatHistory(sessionId: string): Promise<{
   }
 }
 
+export async function compareProducts(productIds: string[], intent: string): Promise<CompareReport> {
+  return request('/ai/compare', {
+    method: 'POST',
+    body: JSON.stringify({
+      product_ids: productIds,
+      intent,
+    }),
+  }, 35000)
+}
+
 // ── Orders ───────────────────────────────────────────
 
 export async function createOrder(payload: {
   items: { product_id: string; quantity: number }[]
   receiver: OrderReceiver
 }): Promise<Order> {
-  try {
-    return await request('/orders', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
-  } catch {
-    // fallback: simulate order creation
-    return {
-      order_id: `o${Date.now()}`,
-      user_id: sessionState.userId || 'u10001',
-      status: 'CREATED',
-      total_amount: '299.00',
-      items: payload.items.map((item) => ({
-        product_id: item.product_id,
-        name: '商品',
-        unit_price: '299.00',
-        quantity: item.quantity,
-      })),
-      receiver: payload.receiver,
-      created_at: new Date().toISOString(),
-    }
-  }
+  return request('/orders', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
 export async function getOrders(params?: {
@@ -651,19 +750,10 @@ export async function getOrderDetail(orderId: string): Promise<Order> {
 }
 
 export async function payOrder(orderId: string, paymentMethod: string = 'BALANCE'): Promise<PaymentResult> {
-  try {
-    return await request(`/orders/${orderId}/pay`, {
-      method: 'POST',
-      body: JSON.stringify({ payment_method: paymentMethod }),
-    })
-  } catch {
-    return {
-      payment_id: `p${Date.now()}`,
-      order_id: orderId,
-      payment_status: 'PAID',
-      paid_at: new Date().toISOString(),
-    }
-  }
+  return request(`/orders/${orderId}/pay`, {
+    method: 'POST',
+    body: JSON.stringify({ payment_method: paymentMethod }),
+  })
 }
 
 // ── Behavior Events ──────────────────────────────────

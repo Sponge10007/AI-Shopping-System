@@ -1,7 +1,9 @@
 package com.aishop.modules.recommendation;
 
 import com.aishop.common.response.ApiResponse;
+import com.aishop.common.security.CurrentUser;
 import com.aishop.modules.recommendation.dto.HomeRecommendationResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,9 +20,10 @@ public class RecommendationController {
 
     @GetMapping("/home")
     public ApiResponse<HomeRecommendationResponse> homeRecommendations(
+            @AuthenticationPrincipal CurrentUser currentUser,
             @RequestParam(defaultValue = "20") Integer limit
     ) {
-        return ApiResponse.ok(recommendationService.homeRecommendations(limit));
+        return ApiResponse.ok(recommendationService.homeRecommendations(currentUser, limit));
     }
 }
 

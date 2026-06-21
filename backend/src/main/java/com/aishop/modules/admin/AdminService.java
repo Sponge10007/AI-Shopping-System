@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
@@ -67,17 +68,42 @@ public class AdminService {
         if (page < 1) page = 1;
         if (size < 1 || size > 100) size = 20;
 
+        String normalizedRole = normalizeRole(role);
+        String normalizedKeyword = normalizeKeyword(keyword);
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        // 当前简化实现：查询所有用户
-        // TODO: 支持按角色和关键词筛选
-        Page<UserEntity> userPage = userRepository.findAll(pageable);
+        Page<UserEntity> userPage = userRepository.findAdminUsers(
+                normalizedRole,
+                normalizedKeyword,
+                pageable
+        );
 
         List<AdminUserResponse> items = userPage.getContent().stream()
                 .map(this::toAdminUserResponse)
                 .collect(Collectors.toList());
 
         return PageResponse.of(items, page, size, userPage.getTotalElements());
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            return null;
+        }
+
+        String normalized = role.trim().toUpperCase(Locale.ROOT);
+        if (!List.of("ADMIN", "MERCHANT", "CUSTOMER").contains(normalized)) {
+            throw new BusinessException(
+                    ErrorCode.INVALID_ARGUMENT,
+                    "无效的用户角色: " + role
+            );
+        }
+        return normalized;
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        return keyword.trim().toLowerCase(Locale.ROOT);
     }
 
     /**

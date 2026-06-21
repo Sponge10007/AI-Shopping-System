@@ -1,10 +1,14 @@
 package com.aishop.modules.search;
 
+import com.aishop.common.exception.BusinessException;
+import com.aishop.common.exception.ErrorCode;
 import com.aishop.common.response.ApiResponse;
+import com.aishop.common.security.CurrentUser;
 import com.aishop.modules.search.dto.ImageSearchResponse;
 import com.aishop.modules.search.dto.SemanticSearchRequest;
 import com.aishop.modules.search.dto.SemanticSearchResponse;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,16 +27,27 @@ public class SearchController {
     }
 
     @PostMapping("/semantic")
-    public ApiResponse<SemanticSearchResponse> semanticSearch(@Valid @RequestBody SemanticSearchRequest request) {
-        return ApiResponse.ok(searchService.semanticSearch(request));
+    public ApiResponse<SemanticSearchResponse> semanticSearch(
+            @AuthenticationPrincipal CurrentUser currentUser,
+            @Valid @RequestBody SemanticSearchRequest request) {
+        requireUser(currentUser);
+        return ApiResponse.ok(searchService.semanticSearch(currentUser, request));
     }
 
     @PostMapping("/image")
     public ApiResponse<ImageSearchResponse> imageSearch(
+            @AuthenticationPrincipal CurrentUser currentUser,
             @RequestPart("image") MultipartFile image,
             @RequestParam(defaultValue = "20") Integer limit
     ) {
-        return ApiResponse.ok(searchService.imageSearch(image, limit));
+        requireUser(currentUser);
+        return ApiResponse.ok(searchService.imageSearch(currentUser, image, limit));
+    }
+
+    private void requireUser(CurrentUser currentUser) {
+        if (currentUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "请先登录");
+        }
     }
 }
 

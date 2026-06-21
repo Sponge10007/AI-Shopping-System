@@ -150,9 +150,9 @@ public class AuthService {
         }
 
         // 3. 校验用户状态
-        if (user.isBanned()) {
+        if (!user.isActive()) {
             throw new BusinessException(ErrorCode.FORBIDDEN,
-                    "账号已被封禁");
+                    "账号已被禁用");
         }
 
         // 4. 校验密码

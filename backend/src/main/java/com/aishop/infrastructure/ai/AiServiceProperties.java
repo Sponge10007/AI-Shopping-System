@@ -16,7 +16,7 @@ public record AiServiceProperties(
             connectTimeoutMs = 1000;
         }
         if (readTimeoutMs <= 0) {
-            readTimeoutMs = 3000;
+            readTimeoutMs = 30000;
         }
     }
 }

@@ -3,6 +3,9 @@ package com.aishop.infrastructure.persistence.repository;
 import com.aishop.infrastructure.persistence.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -30,6 +33,23 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     boolean existsByUsername(String username);
 
     boolean existsByPhone(String phone);
+
+    @Query("""
+            SELECT u
+            FROM UserEntity u
+            WHERE (:role IS NULL OR u.role = :role)
+              AND (
+                    :keyword IS NULL
+                    OR LOWER(u.userId) LIKE CONCAT('%', :keyword, '%')
+                    OR LOWER(u.username) LIKE CONCAT('%', :keyword, '%')
+                    OR LOWER(u.phone) LIKE CONCAT('%', :keyword, '%')
+                  )
+            """)
+    Page<UserEntity> findAdminUsers(
+            @Param("role") String role,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
 
     // 查询数据库中最大的 userId 数字部分（用于初始化计数器）
     // userId 格式为 m10001 或 u10001，SUBSTRING 去掉前缀字母后取数字部分

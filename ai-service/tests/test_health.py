@@ -52,19 +52,40 @@ class FakeChat:
             'raw_answer': 'raw',
         }
 
+    def chat_stream(self, content, user_id, session_id, on_delta):
+        on_delta('answer ')
+        on_delta(f'for {content}')
+        return {
+            'answer': f'answer for {content}',
+            'image_list': [],
+            'link_list': [],
+            'raw_answer': f'answer for {content}',
+        }
+
     def delete_history(self, user_id, session_id):
         self.deleted.append((user_id, session_id))
+
+    def compare_products(self, products, intent, user_id):
+        return {
+            'winner_product_id': products[0]['product_id'],
+            'summary': f'{intent} comparison',
+            'highlights': ['better value'],
+            'items': [],
+            'dimensions': [],
+        }
 
 
 def handler(api_module):
     return object.__new__(api_module.PythonApiHandler)
 
 
-def call_do_post(api_module, path, body):
+def call_do_post(api_module, path, body, internal_token=None):
     payload = json.dumps(body, ensure_ascii=False).encode('utf-8')
     instance = handler(api_module)
     instance.path = path
     instance.headers = {'Content-Length': str(len(payload))}
+    if internal_token is not None:
+        instance.headers['X-Internal-Token'] = internal_token
     instance.rfile = io.BytesIO(payload)
     instance.wfile = io.BytesIO()
     instance.status = None
@@ -76,6 +97,17 @@ def call_do_post(api_module, path, body):
     api_module.PythonApiHandler.do_POST(instance)
     instance.wfile.seek(0)
     return instance.status, json.loads(instance.wfile.read().decode('utf-8'))
+
+
+def encode_chunked(payload, chunk_size=7):
+    encoded = bytearray()
+    for index in range(0, len(payload), chunk_size):
+        chunk = payload[index:index + chunk_size]
+        encoded.extend(f'{len(chunk):X}\r\n'.encode('ascii'))
+        encoded.extend(chunk)
+        encoded.extend(b'\r\n')
+    encoded.extend(b'0\r\n\r\n')
+    return bytes(encoded)
 
 
 def test_health_route_returns_standard_envelope(api_module):
@@ -148,7 +180,7 @@ def test_image_search_chat_and_history_routes_are_mockable(api_module, monkeypat
 
     image_result = instance.route_post('/internal/v1/ai/search/image', {
         'user_id': 'u10001',
-        'image_path_or_url': 'search-upload://headphones.png',
+        'image_path_or_url': 'data:image/png;base64,iVBORw0KGgo=',
         'limit': 2,
         'distance_threshold': 0.7,
     })
@@ -163,10 +195,62 @@ def test_image_search_chat_and_history_routes_are_mockable(api_module, monkeypat
     })
 
     assert image_result == {'detected_object': 'headphones', 'product_ids': ['10001']}
-    assert image_ai.calls == [('u10001', 'search-upload://headphones.png', 2, 0.7)]
+    assert image_ai.calls == [('u10001', 'data:image/png;base64,iVBORw0KGgo=', 2, 0.7)]
     assert chat_result['answer'] == 'answer for 推荐耳机'
     assert clear_result == {'message': '聊天历史已删除'}
     assert chat.deleted == [('u10001', 's10001')]
+
+
+def test_compare_products_route_uses_structured_product_data(api_module, monkeypatch):
+    chat = FakeChat()
+    monkeypatch.setattr(api_module, 'get_chat_app', lambda: chat)
+
+    result = handler(api_module).route_post('/internal/v1/ai/compare/products', {
+        'user_id': 'u10001',
+        'intent': '通勤',
+        'products': [
+            {'product_id': '10001', 'name': '耳机A'},
+            {'product_id': '10002', 'name': '耳机B'},
+        ],
+    })
+
+    assert result['winner_product_id'] == '10001'
+    assert result['summary'] == '通勤 comparison'
+
+
+def test_compare_products_route_accepts_camel_case_user_id(api_module, monkeypatch):
+    chat = FakeChat()
+    monkeypatch.setattr(api_module, 'get_chat_app', lambda: chat)
+
+    result = handler(api_module).route_post('/internal/v1/ai/compare/products', {
+        'userId': 'u10001',
+        'intent': '通勤',
+        'products': [
+            {'product_id': '10001', 'name': '耳机A'},
+            {'product_id': '10002', 'name': '耳机B'},
+        ],
+    })
+
+    assert result['winner_product_id'] == '10001'
+
+
+def test_read_json_body_supports_chunked_transfer_encoding(api_module):
+    payload = json.dumps({
+        'user_id': 'u10001',
+        'intent': '通勤',
+        'products': [
+            {'product_id': '10001'},
+            {'product_id': '10002'},
+        ],
+    }, ensure_ascii=False).encode('utf-8')
+    instance = handler(api_module)
+    instance.headers = {'Transfer-Encoding': 'chunked'}
+    instance.rfile = io.BytesIO(encode_chunked(payload))
+
+    result = api_module.read_json_body(instance)
+
+    assert result['user_id'] == 'u10001'
+    assert len(result['products']) == 2
 
 
 def test_do_post_converts_ai_function_exception_to_unified_json_error(api_module, monkeypatch):
@@ -176,18 +260,101 @@ def test_do_post_converts_ai_function_exception_to_unified_json_error(api_module
 
     monkeypatch.setattr(api_module, 'get_label_db', lambda: BrokenLabelDB())
 
-    status, body = call_do_post(api_module, '/internal/v1/ai/search/products', {'query': '耳机'})
+    status, body = call_do_post(
+        api_module,
+        '/internal/v1/ai/search/products',
+        {'query': '耳机'},
+        api_module.INTERNAL_TOKEN,
+    )
 
     assert status == 500
     assert body == {'ok': False, 'error': 'vector db down'}
 
 
-def test_internal_routes_currently_do_not_enforce_token(api_module, monkeypatch):
+def test_internal_routes_reject_missing_token(api_module, monkeypatch):
     label_db = FakeLabelDB()
     monkeypatch.setattr(api_module, 'get_label_db', lambda: label_db)
 
     status, body = call_do_post(api_module, '/internal/v1/ai/search/products', {'query': '耳机'})
 
+    assert status == 403
+    assert body == {'ok': False, 'error': '内部服务认证失败'}
+    assert label_db.search_calls == []
+
+
+def test_internal_routes_accept_matching_token(api_module, monkeypatch):
+    label_db = FakeLabelDB()
+    monkeypatch.setattr(api_module, 'get_label_db', lambda: label_db)
+
+    status, body = call_do_post(
+        api_module,
+        '/internal/v1/ai/search/products',
+        {'query': '耳机'},
+        api_module.INTERNAL_TOKEN,
+    )
+
     assert status == 200
     assert body['ok'] is True
     assert body['data'] == ['10001', '10002']
+
+
+def test_chat_stream_returns_ndjson_events(api_module, monkeypatch):
+    monkeypatch.setattr(api_module, 'get_chat_app', lambda: FakeChat())
+    payload = json.dumps({
+        'content': '推荐耳机',
+        'user_id': 'u10001',
+        'session_id': 's10001',
+    }, ensure_ascii=False).encode('utf-8')
+    instance = handler(api_module)
+    instance.path = '/internal/v1/ai/chat/messages/stream'
+    instance.headers = {
+        'Content-Length': str(len(payload)),
+        'X-Internal-Token': api_module.INTERNAL_TOKEN,
+    }
+    instance.rfile = io.BytesIO(payload)
+    instance.wfile = io.BytesIO()
+    instance.status = None
+    instance.response_headers = []
+    instance.send_response = lambda status: setattr(instance, 'status', status)
+    instance.send_header = lambda key, value: instance.response_headers.append((key, value))
+    instance.end_headers = lambda: None
+
+    api_module.PythonApiHandler.do_POST(instance)
+    instance.wfile.seek(0)
+    events = [
+        json.loads(line)
+        for line in instance.wfile.read().decode('utf-8').splitlines()
+    ]
+
+    assert instance.status == 200
+    assert events[0] == {'type': 'delta', 'content': 'answer '}
+    assert events[1] == {'type': 'delta', 'content': 'for 推荐耳机'}
+    assert events[2]['type'] == 'done'
+    assert events[2]['data']['answer'] == 'answer for 推荐耳机'
+
+
+def test_java_internal_summary_request_includes_internal_token(api_module, monkeypatch):
+    captured_request = None
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return b'{"data":{"summary_text":"product summary"}}'
+
+    def fake_urlopen(request, timeout):
+        nonlocal captured_request
+        captured_request = request
+        assert timeout == 5
+        return FakeResponse()
+
+    monkeypatch.setattr(api_module.url_request, 'urlopen', fake_urlopen)
+
+    result = api_module.fetch_product_detail_by_internal_summary('p10001')
+
+    assert result == 'product summary'
+    assert captured_request.get_header('X-internal-token') == api_module.INTERNAL_TOKEN

@@ -67,6 +67,16 @@ def test_backend_ai_client_paths_match_python_ai_service_routes():
     assert 'user_suffix = "/recommendations"' in py_api
 
 
+def test_image_search_passes_real_image_data_to_python_service():
+    search_service = read('backend/src/main/java/com/aishop/modules/search/SearchService.java')
+    image_ai = read('ai-service/app/core/image_ai.py')
+
+    assert '"data:" + contentType.toLowerCase() + ";base64,"' in search_service
+    assert 'Base64.getEncoder().encodeToString(content)' in search_service
+    assert 'if re.match(r"^(https?://|data:image/)"' in image_ai
+    assert 'search-upload://' not in search_service
+
+
 def test_postman_and_dev_script_ai_port_match_current_service_defaults():
     collection = json.loads(read('tests/postman/ai-shopping-system.postman_collection.json'))
     variables = {item['key']: item['value'] for item in collection['variable']}
@@ -80,11 +90,12 @@ def test_postman_and_dev_script_ai_port_match_current_service_defaults():
     assert 'cd ai-service/app && ../.venv/bin/python -m api.py_api_server' in dev_script
 
 
-def test_internal_token_gap_is_documented_by_static_contract_check():
-    security_config = read('backend/src/main/java/com/aishop/common/security/SecurityConfig.java')
-    ai_client = read('backend/src/main/java/com/aishop/infrastructure/ai/AiServiceClient.java')
+def test_internal_ai_calls_are_protected_by_shared_token():
+    ai_config = read('backend/src/main/java/com/aishop/infrastructure/ai/AiServiceConfig.java')
     py_api = read('ai-service/app/api/py_api_server.py')
 
-    assert 'permitAll()' in security_config
-    assert 'X-Internal-Token' not in ai_client
-    assert 'X-Internal-Token' not in py_api
+    assert '.defaultHeader("X-Internal-Token", internalToken)' in ai_config
+    assert 'def require_internal_token(self, path: str)' in py_api
+    assert 'secrets.compare_digest(supplied_token, INTERNAL_TOKEN)' in py_api
+    assert '{"X-Internal-Token": INTERNAL_TOKEN}' in py_api
+    assert 'json_response(self, 403, {"ok": False, "error": "内部服务认证失败"})' in py_api

@@ -13,7 +13,7 @@ import java.time.OffsetDateTime;
  * - phone: 手机号，用于登录或找回密码
  * - passwordHash: BCrypt 哈希后的密码，绝不存储明文
  * - role: 角色，CUSTOMER（普通用户）或 MERCHANT（商家）
- * - status: 状态，ACTIVE（正常）/ BANNED（封禁）
+ * - status: 状态，ACTIVE（正常）/ DISABLED（禁用）
  */
 @Entity
 @Table(name = "users")
@@ -52,10 +52,11 @@ public class UserEntity {
     // ===== 业务方法 =====
 
     /**
-     * 检查用户是否被封禁
+     * 只有 ACTIVE 状态允许登录和使用已签发的令牌。
+     * 对未知状态采用安全失败策略，避免状态拼写错误意外放行。
      */
-    public boolean isBanned() {
-        return "BANNED".equals(this.status);
+    public boolean isActive() {
+        return "ACTIVE".equals(this.status);
     }
 
     /**

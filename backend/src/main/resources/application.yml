@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: ai-shopping-backend
+  jackson:
+    property-naming-strategy: SNAKE_CASE
   datasource:
     url: jdbc:postgresql://localhost:5432/ai_shop
     username: ai_shop
@@ -33,4 +35,4 @@ app:
   ai-service:
     base-url: http://127.0.0.1:9000
     connect-timeout-ms: 1000
-    read-timeout-ms: 3000
+    read-timeout-ms: 30000

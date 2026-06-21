@@ -5,7 +5,9 @@ import { useRouter } from 'vue-router'
 import {
   createChatSession,
   deleteChatHistory,
-  sendChatMessage,
+  getChatMessages,
+  listChatSessions,
+  streamChatMessage,
   recordBehavior,
   type ChatSession,
   type ProductSummary,
@@ -18,6 +20,7 @@ interface Message {
   content: string
   relatedProducts?: ProductSummary[]
   timestamp: string
+  streaming?: boolean
 }
 
 const sessions = ref<ChatSession[]>([])
@@ -25,12 +28,27 @@ const currentSession = ref<ChatSession | null>(null)
 const messages = ref<Message[]>([])
 const inputText = ref('')
 const loading = ref(false)
+const loadingHistory = ref(false)
 const creatingSession = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
 
-onMounted(() => {
-  // Start with a default session ready
+onMounted(async () => {
+  await loadSessions()
 })
+
+async function loadSessions() {
+  loadingHistory.value = true
+  try {
+    sessions.value = await listChatSessions()
+    if (sessions.value.length > 0) {
+      await switchSession(sessions.value[0])
+    }
+  } catch {
+    sessions.value = []
+  } finally {
+    loadingHistory.value = false
+  }
+}
 
 async function handleCreateSession() {
   creatingSession.value = true
@@ -68,20 +86,36 @@ async function handleSend() {
   recordBehavior({ event_type: 'CHAT', query: text }).catch(() => {})
 
   loading.value = true
+  const assistantMessage: Message = {
+    role: 'assistant',
+    content: '',
+    timestamp: new Date().toLocaleTimeString(),
+    streaming: true,
+  }
+  messages.value.push(assistantMessage)
+  await nextTick()
+  scrollToBottom()
   try {
-    const response = await sendChatMessage(currentSession.value.session_id, text)
-    messages.value.push({
-      role: 'assistant',
-      content: response.answer,
-      relatedProducts: response.related_products,
-      timestamp: new Date().toLocaleTimeString(),
+    const response = await streamChatMessage(currentSession.value.session_id, text, {
+      onDelta: (delta) => {
+        assistantMessage.content += delta
+        nextTick().then(scrollToBottom)
+      },
     })
+    assistantMessage.content = response.answer
+    assistantMessage.relatedProducts = response.related_products
+    assistantMessage.streaming = false
+    const activeSession = sessions.value.find(
+      session => session.session_id === currentSession.value?.session_id,
+    )
+    if (activeSession?.title === '新对话' || activeSession?.title === '新的导购会话') {
+      activeSession.title = text.length <= 24 ? text : `${text.slice(0, 24)}…`
+    }
   } catch {
-    messages.value.push({
-      role: 'assistant',
-      content: 'AI 助手暂时无法响应，请稍后重试。',
-      timestamp: new Date().toLocaleTimeString(),
-    })
+    assistantMessage.content = assistantMessage.content
+      ? `${assistantMessage.content}\n\n（连接中断，请稍后重试）`
+      : 'AI 助手暂时无法响应，请稍后重试。'
+    assistantMessage.streaming = false
   } finally {
     loading.value = false
     await nextTick()
@@ -99,9 +133,33 @@ async function handleClearHistory() {
   }
 }
 
-function switchSession(session: ChatSession) {
+async function switchSession(session: ChatSession) {
   currentSession.value = session
-  messages.value = []
+  loadingHistory.value = true
+  try {
+    const history = await getChatMessages(session.session_id)
+    if (currentSession.value?.session_id !== session.session_id) return
+    messages.value = history.map(message => ({
+      role: message.role,
+      content: message.content,
+      relatedProducts: message.related_products,
+      timestamp: formatMessageTime(message.created_at),
+    }))
+    await nextTick()
+    scrollToBottom()
+  } catch {
+    if (currentSession.value?.session_id === session.session_id) {
+      messages.value = []
+    }
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
+function formatMessageTime(value?: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString()
 }
 
 function scrollToBottom() {
@@ -149,7 +207,7 @@ function goToProduct(productId: string) {
         </button>
 
         <p v-if="sessions.length === 0" class="empty-hint">
-          点击「新对话」开始与 AI 助手交流
+          {{ loadingHistory ? '正在加载历史会话...' : '点击「新对话」开始与 AI 助手交流' }}
         </p>
       </div>
     </aside>
@@ -203,10 +261,17 @@ function goToProduct(productId: string) {
             <div class="message-body">
               <!-- AI answers may contain HTML from backend (already sanitized) -->
               <div
-                v-if="msg.role === 'assistant'"
+                v-if="msg.role === 'assistant' && !msg.streaming"
                 class="message-text"
                 v-html="msg.content"
               ></div>
+              <div
+                v-else-if="msg.role === 'assistant' && msg.content"
+                class="message-text streaming-text"
+              >{{ msg.content }}</div>
+              <div v-else-if="msg.role === 'assistant'" class="typing-indicator">
+                <span></span><span></span><span></span>
+              </div>
               <div v-else class="message-text">{{ msg.content }}</div>
 
               <!-- Related products -->
@@ -233,17 +298,6 @@ function goToProduct(productId: string) {
             </div>
           </div>
 
-          <!-- Loading indicator -->
-          <div v-if="loading" class="message assistant">
-            <div class="message-avatar">
-              <Bot :size="18" />
-            </div>
-            <div class="message-body">
-              <div class="typing-indicator">
-                <span></span><span></span><span></span>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Input area -->
@@ -485,6 +539,10 @@ function goToProduct(productId: string) {
   padding: 12px 16px;
   font-size: 0.92rem;
   line-height: 1.65;
+}
+
+.streaming-text {
+  white-space: pre-wrap;
 }
 
 .message.assistant .message-text {

@@ -1,5 +1,7 @@
 package com.aishop;
 
+import com.aishop.common.exception.BusinessException;
+import com.aishop.common.security.CurrentUser;
 import com.aishop.infrastructure.ai.AiChatResult;
 import com.aishop.infrastructure.ai.AiServiceClient;
 import com.aishop.modules.ai.AiChatService;
@@ -20,6 +22,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -27,6 +30,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AiChatServiceTest {
+    private static final CurrentUser CUSTOMER = new CurrentUser("u20002", "CUSTOMER");
+
     @Mock
     private ProductService productService;
     @Mock
@@ -58,11 +63,14 @@ class AiChatServiceTest {
                 List.of("/products/10001", "javascript:alert(1)"),
                 "raw-answer"
         );
-        when(aiServiceClient.chat("u10001", "s10001", "find headphones")).thenReturn(unsafeResult);
+        when(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq("s10001")))
+                .thenReturn("u20002");
+        when(aiServiceClient.chat("u20002", "s10001", "find headphones")).thenReturn(unsafeResult);
         when(productService.findSummariesByIds(eq(List.of("10001")), eq(0.9), anyString()))
                 .thenReturn(List.of(TestFixtures.productSummary("10001")));
 
         ChatMessageResponse response = aiChatService.sendMessage(
+                CUSTOMER,
                 "s10001",
                 new ChatMessageRequest("find headphones")
         );
@@ -74,18 +82,38 @@ class AiChatServiceTest {
         assertThat(response.linkList()).containsExactly("/products/10001");
         assertThat(response.imageList()).containsExactly("https://example.com/products/10001/main.jpg");
         assertThat(response.relatedProducts()).extracting(ProductSummaryResponse::productId).containsExactly("10001");
-        verify(behaviorService).recordForUser(eq("u10001"), org.mockito.ArgumentMatchers.any());
+        verify(behaviorService).recordForUser(eq("u20002"), org.mockito.ArgumentMatchers.any());
     }
 
     @Test
     void sendMessageReturnsReadableFallbackWhenAiIsUnavailable() {
-        when(aiServiceClient.chat("u10001", "s10001", "hello")).thenReturn(AiChatResult.unavailable());
+        when(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq("s10001")))
+                .thenReturn("u20002");
+        when(aiServiceClient.chat("u20002", "s10001", "hello")).thenReturn(AiChatResult.unavailable());
         when(productService.findSummariesByIds(eq(List.of()), eq(0.9), anyString())).thenReturn(List.of());
 
-        ChatMessageResponse response = aiChatService.sendMessage("s10001", new ChatMessageRequest("hello"));
+        ChatMessageResponse response = aiChatService.sendMessage(
+                CUSTOMER,
+                "s10001",
+                new ChatMessageRequest("hello")
+        );
 
         assertThat(response.answer()).contains("AI");
         assertThat(response.linkList()).isEmpty();
         assertThat(response.relatedProducts()).isEmpty();
+    }
+
+    @Test
+    void sendMessageRejectsSessionsOwnedByAnotherUser() {
+        when(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq("s-other")))
+                .thenReturn("u99999");
+
+        assertThatThrownBy(() -> aiChatService.sendMessage(
+                CUSTOMER,
+                "s-other",
+                new ChatMessageRequest("hello")
+        ))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("无权访问");
     }
 }
