@@ -1,18 +1,30 @@
 package com.aishop.infrastructure.ai;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @Component
 public class AiServiceClient {
+    private static final Logger log = LoggerFactory.getLogger(AiServiceClient.class);
     private static final double DEFAULT_DISTANCE_THRESHOLD = 0.9;
 
     private final RestClient restClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public AiServiceClient(RestClient aiRestClient) {
         this.restClient = aiRestClient;
@@ -94,6 +106,100 @@ public class AiServiceClient {
         }
     }
 
+    public AiChatResult streamChat(
+            String userId,
+            String sessionId,
+            String content,
+            Consumer<String> onDelta
+    ) {
+        Map<String, Object> body = Map.of(
+                "user_id", userId,
+                "session_id", sessionId,
+                "content", content
+        );
+        try {
+            return restClient.post()
+                    .uri("/internal/v1/ai/chat/messages/stream")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.parseMediaType("application/x-ndjson"))
+                    .body(body)
+                    .exchange((request, response) -> {
+                        if (!response.getStatusCode().is2xxSuccessful()) {
+                            throw new IllegalStateException(
+                                    "AI Service stream returned HTTP " + response.getStatusCode().value()
+                            );
+                        }
+                        AiChatResult result = null;
+                        try (BufferedReader reader = new BufferedReader(
+                                new InputStreamReader(response.getBody(), StandardCharsets.UTF_8)
+                        )) {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                if (line.isBlank()) {
+                                    continue;
+                                }
+                                JsonNode event = objectMapper.readTree(line);
+                                String type = event.path("type").asText();
+                                if ("delta".equals(type)) {
+                                    String delta = event.path("content").asText("");
+                                    if (!delta.isEmpty()) {
+                                        onDelta.accept(delta);
+                                    }
+                                } else if ("done".equals(type)) {
+                                    Map<String, Object> data = objectMapper.convertValue(
+                                            event.path("data"),
+                                            new TypeReference<>() {
+                                            }
+                                    );
+                                    result = mapChatResult(data);
+                                } else if ("error".equals(type)) {
+                                    throw new IllegalStateException(
+                                            event.path("message").asText("AI 流式响应失败")
+                                    );
+                                }
+                            }
+                        }
+                        return result == null ? AiChatResult.unavailable() : result;
+                    });
+        } catch (Exception exception) {
+            log.warn("AI Service streaming chat failed: error={}", exception.getMessage());
+            return AiChatResult.unavailable();
+        }
+    }
+
+    public AiCompareResult compareProducts(
+            String userId,
+            String intent,
+            List<AiCompareProductInput> products
+    ) {
+        List<Map<String, Object>> serializedProducts = products.stream()
+                .map(product -> Map.<String, Object>of(
+                        "product_id", product.productId(),
+                        "name", product.name(),
+                        "description", product.description() == null ? "" : product.description(),
+                        "category", product.category() == null ? "" : product.category(),
+                        "price", product.price(),
+                        "stock", product.stock(),
+                        "sales", product.sales(),
+                        "rating", product.rating(),
+                        "tags", product.tags() == null ? List.of() : product.tags()
+                ))
+                .toList();
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("user_id", userId);
+        // 兼容内部服务使用不同 Jackson 命名策略的旧运行实例。
+        body.put("userId", userId);
+        body.put("intent", intent);
+        body.put("products", serializedProducts);
+        return postForData(
+                "/internal/v1/ai/compare/products",
+                body,
+                new ParameterizedTypeReference<AiCompareResult>() {
+                },
+                null
+        );
+    }
+
     public boolean deleteChatHistory(String userId, String sessionId) {
         try {
             AiEnvelope<Map<String, Object>> response = restClient.delete()
@@ -102,6 +208,34 @@ public class AiServiceClient {
                             .queryParam("user_id", userId)
                             .queryParam("session_id", sessionId)
                             .build())
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+            return response != null && response.ok();
+        } catch (RestClientException exception) {
+            return false;
+        }
+    }
+
+    public boolean indexProduct(String productId, String description) {
+        Map<String, Object> body = Map.of("description", description);
+        try {
+            AiEnvelope<Map<String, Object>> response = restClient.post()
+                    .uri("/internal/v1/ai/products/{productId}/index", productId)
+                    .body(body)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+            return response != null && response.ok();
+        } catch (RestClientException exception) {
+            return false;
+        }
+    }
+
+    public boolean deleteProductIndex(String productId) {
+        try {
+            AiEnvelope<Map<String, Object>> response = restClient.delete()
+                    .uri("/internal/v1/ai/products/{productId}/index", productId)
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {
                     });
@@ -124,10 +258,21 @@ public class AiServiceClient {
                     .retrieve()
                     .body(new ParameterizedAiEnvelopeType<>(dataType));
             if (response == null || !response.ok() || response.data() == null) {
+                log.warn(
+                        "AI Service returned no usable data: path={}, ok={}, error={}",
+                        path,
+                        response == null ? null : response.ok(),
+                        response == null ? "empty response" : response.error()
+                );
                 return fallback;
             }
             return response.data();
         } catch (RestClientException exception) {
+            log.warn(
+                    "AI Service request failed: path={}, error={}",
+                    path,
+                    exception.getMessage()
+            );
             return fallback;
         }
     }

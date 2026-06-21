@@ -19,9 +19,9 @@ public class RecommendationService {
         this.aiServiceClient = aiServiceClient;
     }
 
-    public HomeRecommendationResponse homeRecommendations(Integer limit) {
+    public HomeRecommendationResponse homeRecommendations(CurrentUser currentUser, Integer limit) {
         int normalizedLimit = normalizeLimit(limit, 20);
-        String userId = CurrentUser.prototypeCustomer().userId();
+        String userId = currentUser == null ? "-1" : currentUser.userId();
         List<String> productIds = aiServiceClient.recommendProducts(userId, normalizedLimit);
         List<ProductSummaryResponse> items = productService.findSummariesByIds(
                 productIds,

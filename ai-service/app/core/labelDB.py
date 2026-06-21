@@ -60,7 +60,7 @@ class LabelDB:
             embedding = self.model.encode([description])[0]
             embedding = self._normalize_embedding(embedding)
 
-            self.prod_collection.add(
+            self.prod_collection.upsert(
                 embeddings=[embedding.tolist()],
                 documents=[description],
                 ids=[str(product_id)],
@@ -69,7 +69,7 @@ class LabelDB:
             print(f"[Error] Failed to add product in background: {e}")
 
     def prod_add_product(self, product_id: str, description: str):
-        """Add a product asynchronously."""
+        """Add or update a product asynchronously."""
         self.executor.submit(self._do_prod_add_product, product_id, description)
 
     def prod_delete_product(self, product_id: str):

@@ -2,12 +2,16 @@ import { describe, expect, it, beforeEach, vi } from 'vitest'
 import {
   createMerchantProduct,
   createOrder,
+  compareProducts,
   editMerchantProduct,
   getAdminOverview,
   getProductDetail,
   getProductList,
   homeRecommendations,
+  imageSearch,
+  getChatMessages,
   listAdminUsers,
+  listChatSessions,
   listMerchantProducts,
   loginApi,
   payOrder,
@@ -15,6 +19,7 @@ import {
   restockProduct,
   semanticSearch,
   sendChatMessage,
+  streamChatMessage,
   updateUserStatus,
   uploadProductImage,
   uploadSearchImage,
@@ -68,7 +73,7 @@ describe('frontend API service', () => {
     }))
   })
 
-  it('returns fallback data for product, search, recommendation, chat, order, and payment flows when backend is unavailable', async () => {
+  it('returns fallback data for read-only discovery and chat flows when backend is unavailable', async () => {
     fetchMock.mockRejectedValue(new Error('backend down'))
 
     await expect(getProductList({ keyword: '耳机' })).resolves.toMatchObject({ total: 3 })
@@ -77,11 +82,102 @@ describe('frontend API service', () => {
     await expect(semanticSearch('通勤耳机')).resolves.toMatchObject({ query: '通勤耳机', items: expect.any(Array) })
     await expect(homeRecommendations(3)).resolves.toMatchObject({ strategy: 'FALLBACK', items: expect.any(Array) })
     await expect(sendChatMessage('s1', '怎么选耳机')).resolves.toMatchObject({ session_id: 's1', answer: expect.stringContaining('本地示例回复') })
+  })
+
+  it('reads incremental NDJSON chat events', async () => {
+    const deltas: string[] = []
+    fetchMock.mockResolvedValueOnce(new Response(
+      [
+        JSON.stringify({ type: 'delta', content: '推荐' }),
+        JSON.stringify({ type: 'delta', content: '耳机' }),
+        JSON.stringify({
+          type: 'done',
+          data: {
+            session_id: 's1',
+            answer: '推荐耳机',
+            image_list: [],
+            link_list: [],
+            related_products: [],
+          },
+        }),
+        '',
+      ].join('\n'),
+      { status: 200, headers: { 'Content-Type': 'application/x-ndjson' } },
+    ))
+
+    const result = await streamChatMessage('s1', '推荐一款耳机', {
+      onDelta: (delta) => deltas.push(delta),
+    })
+
+    expect(deltas).toEqual(['推荐', '耳机'])
+    expect(result.answer).toBe('推荐耳机')
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/ai/chat/sessions/s1/messages/stream',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('loads saved chat sessions and messages', async () => {
+    fetchMock
+      .mockResolvedValueOnce(apiOk([
+        { session_id: 's1', title: '通勤耳机', created_at: '2026-06-22T01:00:00Z' },
+      ]))
+      .mockResolvedValueOnce(apiOk([
+        {
+          role: 'user',
+          content: '推荐通勤耳机',
+          image_list: [],
+          link_list: [],
+          related_products: [],
+          created_at: '2026-06-22T01:01:00Z',
+        },
+      ]))
+
+    await expect(listChatSessions()).resolves.toHaveLength(1)
+    await expect(getChatMessages('s1')).resolves.toMatchObject([
+      { role: 'user', content: '推荐通勤耳机' },
+    ])
+    expect(fetchMock.mock.calls.map(call => call[0])).toEqual([
+      '/api/v1/ai/chat/sessions',
+      '/api/v1/ai/chat/sessions/s1/messages',
+    ])
+  })
+
+  it('does not fabricate successful orders or payments when the backend is unavailable', async () => {
+    fetchMock.mockRejectedValue(new Error('backend down'))
+
     await expect(createOrder({
       items: [{ product_id: '10001', quantity: 2 }],
       receiver: { name: 'Alice', phone: '13800000000', address: 'Hangzhou' },
-    })).resolves.toMatchObject({ status: 'CREATED', items: [{ product_id: '10001', quantity: 2 }] })
-    await expect(payOrder('o10001')).resolves.toMatchObject({ order_id: 'o10001', payment_status: 'PAID' })
+    })).rejects.toThrow('backend down')
+    await expect(payOrder('o10001')).rejects.toThrow('backend down')
+  })
+
+  it('does not fabricate image-search results when image analysis fails', async () => {
+    fetchMock.mockRejectedValue(new Error('vision service down'))
+    const image = new File(['image'], 'query.png', { type: 'image/png' })
+
+    await expect(imageSearch(image)).rejects.toThrow('vision service down')
+  })
+
+  it('calls the structured AI comparison endpoint', async () => {
+    fetchMock.mockResolvedValueOnce(apiOk({
+      source: 'AI',
+      intent: '通勤',
+      winner_product_id: '10001',
+      summary: '第一款更合适',
+      highlights: ['价格更低'],
+      items: [],
+      dimensions: [],
+    }))
+
+    await expect(compareProducts(['10001', '10002'], '通勤'))
+      .resolves.toMatchObject({ winner_product_id: '10001', source: 'AI' })
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/ai/compare', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ product_ids: ['10001', '10002'], intent: '通勤' }),
+    }))
   })
 
   it('normalizes backend2 camelCase product payloads for existing views', async () => {

@@ -233,7 +233,7 @@ public class ProductService {
                 productId, request.name(), currentUser.userId());
 
         // 异步通知 AI Service 更新向量索引
-        aiIndexNotifier.notifyProductCreated(productId, request.name());
+        aiIndexNotifier.notifyProductCreated(productId, buildIndexDescription(product));
 
         return new ProductMutationResponse(productId, "ON_SALE", "PENDING");
     }
@@ -292,7 +292,7 @@ public class ProductService {
         boolean descChanged = request.description() != null;
         boolean tagsChanged = request.tags() != null;
         if (nameChanged || descChanged || tagsChanged) {
-            aiIndexNotifier.notifyProductUpdated(productId, product.getName());
+            aiIndexNotifier.notifyProductUpdated(productId, buildIndexDescription(product));
         }
 
         return toProductResponse(product, images);
@@ -320,7 +320,7 @@ public class ProductService {
         log.info("商品下架成功: productId={}", productId);
 
         // 异步通知 AI Service 删除向量索引
-        aiIndexNotifier.notifyProductDeleted(productId, product.getName());
+        aiIndexNotifier.notifyProductDeleted(productId);
 
         return new ProductMutationResponse(productId, "OFF_SALE", "DELETE_PENDING");
     }
@@ -510,6 +510,25 @@ public class ProductService {
             return null;
         }
         return CATEGORY_NAMES.getOrDefault(categoryId, categoryId);
+    }
+
+    private String buildIndexDescription(ProductEntity product) {
+        StringBuilder description = new StringBuilder();
+        appendIndexPart(description, product.getName());
+        appendIndexPart(description, product.getCategoryName());
+        appendIndexPart(description, product.getDescription());
+        appendIndexPart(description, product.getTags());
+        return description.toString();
+    }
+
+    private void appendIndexPart(StringBuilder target, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        if (!target.isEmpty()) {
+            target.append("，");
+        }
+        target.append(value.trim());
     }
 
     /**

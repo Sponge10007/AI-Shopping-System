@@ -23,6 +23,12 @@ http://127.0.0.1:9000
 }
 ```
 
+除 `GET /health` 外，所有 `/internal/v1/ai/**` 请求必须携带：
+
+```http
+X-Internal-Token: <AI_INTERNAL_TOKEN 环境变量>
+```
+
 错误响应格式：
 
 ```json
@@ -365,4 +371,3 @@ Java 可以返回纯文本：
   "data": "商品名：蓝牙降噪耳机，价格：299.00，网页链接：https://example.com/products/10001"
 }
 ```
-

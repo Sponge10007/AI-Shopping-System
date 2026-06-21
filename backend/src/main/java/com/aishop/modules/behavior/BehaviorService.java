@@ -9,7 +9,6 @@ import com.aishop.modules.behavior.dto.BehaviorEventResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import com.aishop.common.security.CurrentUser;
 import java.util.HashMap;
 
 import java.util.Map;
@@ -52,13 +51,13 @@ public class BehaviorService {
      * 允许的事件类型白名单
      */
     private static final Set<String> ALLOWED_EVENT_TYPES = Set.of(
-        "VIEW", "SEARCH", "IMAGE_SEARCH", "CHAT", "ADD_TO_CART", "PURCHASE"
+        "VIEW", "SEARCH", "IMAGE_SEARCH", "CHAT", "AI_COMPARE", "ADD_TO_CART", "PURCHASE"
     );
 
     private final BehaviorLogRepository behaviorLogRepository;
 
     private static final Set<String> OPTIONAL_TARGET_EVENTS = Set.of(
-            "SEARCH", "IMAGE_SEARCH", "CHAT"
+            "SEARCH", "IMAGE_SEARCH", "CHAT", "AI_COMPARE"
     );
 
     public BehaviorService(BehaviorLogRepository behaviorLogRepository) {
@@ -122,10 +121,6 @@ public class BehaviorService {
                 saved.getId(), saved.getUserId(), saved.getEventType());
 
         return new BehaviorEventResponse(true);
-    }
-
-    public BehaviorEventResponse record(BehaviorEventRequest request) {
-        return recordEvent(CurrentUser.prototypeCustomer().userId(), request);
     }
 
     public void recordForUser(String userId, BehaviorEventRequest request) {

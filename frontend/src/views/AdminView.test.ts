@@ -30,7 +30,7 @@ describe('Admin views', () => {
   })
 
   it('renders users by role and updates user status', async () => {
-    vi.mocked(api.listAdminUsers).mockResolvedValue({ items: users, page: 1, size: 20, total: 3, has_next: false })
+    vi.mocked(api.listAdminUsers).mockResolvedValue({ items: users, page: 1, size: 100, total: 3, has_next: false })
     vi.mocked(api.updateUserStatus).mockResolvedValue({ user_id: 'admin10001', status: 'DISABLED' })
 
     const wrapper = mount(AdminUsersView)
@@ -47,6 +47,42 @@ describe('Admin views', () => {
     await flushPromises()
 
     expect(api.updateUserStatus).toHaveBeenCalledWith('admin10001', 'DISABLED')
+  })
+
+  it('loads every user page and sends role and keyword filters', async () => {
+    vi.mocked(api.listAdminUsers)
+      .mockResolvedValueOnce({ items: users.slice(0, 2), page: 1, size: 100, total: 3, has_next: true })
+      .mockResolvedValueOnce({ items: users.slice(2), page: 2, size: 100, total: 3, has_next: false })
+      .mockResolvedValueOnce({ items: [users[2]], page: 1, size: 100, total: 1, has_next: false })
+
+    const wrapper = mount(AdminUsersView)
+    await flushPromises()
+
+    expect(api.listAdminUsers).toHaveBeenNthCalledWith(1, {
+      role: undefined,
+      keyword: undefined,
+      page: 1,
+      size: 100,
+    })
+    expect(api.listAdminUsers).toHaveBeenNthCalledWith(2, {
+      role: undefined,
+      keyword: undefined,
+      page: 2,
+      size: 100,
+    })
+    expect(wrapper.text()).toContain('alice')
+
+    await wrapper.get('[aria-label="搜索用户"]').setValue('alice')
+    await wrapper.get('[aria-label="筛选角色"]').setValue('CUSTOMER')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(api.listAdminUsers).toHaveBeenLastCalledWith({
+      role: 'CUSTOMER',
+      keyword: 'alice',
+      page: 1,
+      size: 100,
+    })
   })
 
   it('renders platform metrics and handles API failure gracefully', async () => {

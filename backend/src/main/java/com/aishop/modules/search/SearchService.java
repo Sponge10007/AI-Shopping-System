@@ -1,5 +1,7 @@
 package com.aishop.modules.search;
 
+import com.aishop.common.exception.BusinessException;
+import com.aishop.common.exception.ErrorCode;
 import com.aishop.common.security.CurrentUser;
 import com.aishop.infrastructure.ai.AiImageSearchResult;
 import com.aishop.infrastructure.ai.AiServiceClient;
@@ -14,12 +16,22 @@ import com.aishop.modules.search.dto.SemanticSearchResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class SearchService {
+    private static final long MAX_IMAGE_SIZE = 10L * 1024 * 1024;
+    private static final Set<String> SUPPORTED_IMAGE_TYPES = Set.of(
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+    );
+
     private final ProductService productService;
     private final AiServiceClient aiServiceClient;
     private final BehaviorService behaviorService;
@@ -34,8 +46,8 @@ public class SearchService {
         this.behaviorService = behaviorService;
     }
 
-    public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
-        String userId = CurrentUser.prototypeCustomer().userId();
+    public SemanticSearchResponse semanticSearch(CurrentUser currentUser, SemanticSearchRequest request) {
+        String userId = currentUser.userId();
         behaviorService.recordForUser(userId, new BehaviorEventRequest(
                 "SEARCH",
                 null,
@@ -71,10 +83,10 @@ public class SearchService {
         );
     }
 
-    public ImageSearchResponse imageSearch(MultipartFile image, Integer limit) {
-        String userId = CurrentUser.prototypeCustomer().userId();
+    public ImageSearchResponse imageSearch(CurrentUser currentUser, MultipartFile image, Integer limit) {
+        String userId = currentUser.userId();
         int normalizedLimit = normalizeLimit(limit, 20);
-        String imagePathOrUrl = "search-upload://" + image.getOriginalFilename();
+        String imageDataUrl = toImageDataUrl(image);
         behaviorService.recordForUser(userId, new BehaviorEventRequest(
                 "IMAGE_SEARCH",
                 null,
@@ -87,7 +99,7 @@ public class SearchService {
 
         AiImageSearchResult aiResult = aiServiceClient.imageSearch(
                 userId,
-                imagePathOrUrl,
+                imageDataUrl,
                 normalizedLimit,
                 0.9
         );
@@ -111,6 +123,65 @@ public class SearchService {
                 detectedObject(aiResult),
                 items
         );
+    }
+
+    private String toImageDataUrl(MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_ARGUMENT, "搜索图片不能为空");
+        }
+        if (image.getSize() > MAX_IMAGE_SIZE) {
+            throw new BusinessException(ErrorCode.FILE_TOO_LARGE, "搜索图片不能超过10MB");
+        }
+
+        String contentType = image.getContentType();
+        if (contentType == null || !SUPPORTED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
+            throw new BusinessException(
+                    ErrorCode.UNSUPPORTED_FILE_TYPE,
+                    "图片搜索仅支持 JPEG、PNG、WebP 格式"
+            );
+        }
+
+        try {
+            byte[] content = image.getBytes();
+            if (!matchesImageSignature(contentType, content)) {
+                throw new BusinessException(
+                        ErrorCode.UNSUPPORTED_FILE_TYPE,
+                        "图片内容与声明格式不匹配"
+                );
+            }
+            return "data:" + contentType.toLowerCase() + ";base64,"
+                    + Base64.getEncoder().encodeToString(content);
+        } catch (IOException exception) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "读取搜索图片失败");
+        }
+    }
+
+    private boolean matchesImageSignature(String contentType, byte[] content) {
+        if (content.length < 4) {
+            return false;
+        }
+        return switch (contentType.toLowerCase()) {
+            case "image/jpeg" ->
+                    content[0] == (byte) 0xFF
+                            && content[1] == (byte) 0xD8
+                            && content[2] == (byte) 0xFF;
+            case "image/png" ->
+                    content[0] == (byte) 0x89
+                            && content[1] == 0x50
+                            && content[2] == 0x4E
+                            && content[3] == 0x47;
+            case "image/webp" ->
+                    content.length >= 12
+                            && content[0] == 0x52
+                            && content[1] == 0x49
+                            && content[2] == 0x46
+                            && content[3] == 0x46
+                            && content[8] == 0x57
+                            && content[9] == 0x45
+                            && content[10] == 0x42
+                            && content[11] == 0x50;
+            default -> false;
+        };
     }
 
     private List<ProductSummaryResponse> applyFilters(List<ProductSummaryResponse> items, SearchFilters filters) {

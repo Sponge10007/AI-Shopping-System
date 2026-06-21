@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Check, ShoppingBag, Sparkles } from 'lucide-vue-next'
+import { Check, GitCompareArrows, ShoppingBag, Sparkles } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProductDetail, recordBehavior, type Product } from '../services/api'
 import { isLoggedIn } from '../stores/session'
+import { addCompareProduct } from '../stores/compare'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,6 +50,15 @@ function buyNow() {
       },
     })
   }
+}
+
+function addToCompare() {
+  if (!product.value) return
+  const added = addCompareProduct(product.value.product_id)
+  router.push({
+    path: '/compare',
+    query: added ? {} : { notice: '对比清单最多支持4件商品' },
+  })
 }
 </script>
 
@@ -139,7 +149,10 @@ function buyNow() {
             <ShoppingBag :size="18" />
             <span>{{ product.stock > 0 ? '立即选购' : '暂时缺货' }}</span>
           </button>
-          <RouterLink to="/compare" class="soft-button full-button">加入对比清单</RouterLink>
+          <button type="button" class="soft-button full-button" @click="addToCompare">
+            <GitCompareArrows :size="18" />
+            <span>加入对比清单</span>
+          </button>
         </div>
       </aside>
     </template>

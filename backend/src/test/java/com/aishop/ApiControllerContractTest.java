@@ -2,15 +2,23 @@ package com.aishop;
 
 import com.aishop.common.security.CurrentUser;
 import com.aishop.common.security.jwt.JwtTokenProvider;
+import com.aishop.infrastructure.persistence.repository.UserRepository;
 import com.aishop.modules.admin.AdminController;
 import com.aishop.modules.admin.AdminService;
 import com.aishop.modules.ai.AiChatController;
 import com.aishop.modules.ai.AiChatService;
+import com.aishop.modules.ai.AiCompareController;
+import com.aishop.modules.ai.AiCompareService;
 import com.aishop.modules.ai.dto.ChatMessageRequest;
 import com.aishop.modules.ai.dto.ChatMessageResponse;
+import com.aishop.modules.ai.dto.ChatHistoryMessageResponse;
 import com.aishop.modules.ai.dto.ChatSessionResponse;
 import com.aishop.modules.ai.dto.ClearChatHistoryResponse;
 import com.aishop.modules.ai.dto.CreateChatSessionRequest;
+import com.aishop.modules.ai.dto.CompareProductsRequest;
+import com.aishop.modules.ai.dto.CompareProductsResponse;
+import com.aishop.modules.ai.dto.CompareItemResponse;
+import com.aishop.modules.ai.dto.CompareDimensionResponse;
 import com.aishop.modules.auth.AuthController;
 import com.aishop.modules.auth.AuthService;
 import com.aishop.modules.behavior.BehaviorController;
@@ -65,6 +73,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -83,6 +92,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         RecommendationController.class,
         BehaviorController.class,
         AiChatController.class,
+        AiCompareController.class,
         OrderController.class,
         AdminController.class,
         UploadController.class,
@@ -100,6 +110,8 @@ class ApiControllerContractTest {
     @MockBean
     private JwtTokenProvider jwtTokenProvider;
     @MockBean
+    private UserRepository userRepository;
+    @MockBean
     private AuthService authService;
     @MockBean
     private UserService userService;
@@ -113,6 +125,8 @@ class ApiControllerContractTest {
     private BehaviorService behaviorService;
     @MockBean
     private AiChatService aiChatService;
+    @MockBean
+    private AiCompareService aiCompareService;
     @MockBean
     private OrderService orderService;
     @MockBean
@@ -155,20 +169,50 @@ class ApiControllerContractTest {
         when(productService.restock(any(CurrentUser.class), anyString(), any(RestockRequest.class)))
                 .thenReturn(new RestockResponse("10001", 130));
 
-        when(searchService.semanticSearch(any(SemanticSearchRequest.class)))
+        when(searchService.semanticSearch(any(CurrentUser.class), any(SemanticSearchRequest.class)))
                 .thenReturn(new SemanticSearchResponse("headphones", false, List.of(TestFixtures.productSummary("10001"))));
-        when(searchService.imageSearch(any(MultipartFile.class), anyInt()))
+        when(searchService.imageSearch(any(CurrentUser.class), any(MultipartFile.class), anyInt()))
                 .thenReturn(new ImageSearchResponse("headphones", List.of(TestFixtures.productSummary("10001"))));
-        when(recommendationService.homeRecommendations(anyInt()))
+        when(recommendationService.homeRecommendations(nullable(CurrentUser.class), anyInt()))
                 .thenReturn(new HomeRecommendationResponse("USER_PROFILE", List.of(TestFixtures.productSummary("10001"))));
         when(behaviorService.recordEvent(anyString(), any(BehaviorEventRequest.class)))
                 .thenReturn(new BehaviorEventResponse(true));
 
-        when(aiChatService.createSession(any(CreateChatSessionRequest.class)))
+        when(aiChatService.createSession(any(CurrentUser.class), any(CreateChatSessionRequest.class)))
                 .thenReturn(new ChatSessionResponse("s10001", "session", OffsetDateTime.parse("2026-06-16T00:00:00Z")));
-        when(aiChatService.sendMessage(anyString(), any(ChatMessageRequest.class)))
+        when(aiChatService.listSessions(any(CurrentUser.class)))
+                .thenReturn(List.of(new ChatSessionResponse(
+                        "s10001",
+                        "通勤耳机",
+                        OffsetDateTime.parse("2026-06-16T00:00:00Z")
+                )));
+        when(aiChatService.listMessages(any(CurrentUser.class), anyString()))
+                .thenReturn(List.of(new ChatHistoryMessageResponse(
+                        "user",
+                        "推荐通勤耳机",
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        OffsetDateTime.parse("2026-06-16T00:01:00Z")
+                )));
+        when(aiChatService.sendMessage(any(CurrentUser.class), anyString(), any(ChatMessageRequest.class)))
                 .thenReturn(new ChatMessageResponse("s10001", "answer", List.of(), List.of(), "raw", List.of()));
-        when(aiChatService.clearHistory(anyString())).thenReturn(new ClearChatHistoryResponse(true));
+        when(aiChatService.clearHistory(any(CurrentUser.class), anyString()))
+                .thenReturn(new ClearChatHistoryResponse(true));
+        when(aiCompareService.compare(any(CurrentUser.class), any(CompareProductsRequest.class)))
+                .thenReturn(new CompareProductsResponse(
+                        "AI",
+                        "通勤",
+                        "10001",
+                        "第一款更合适",
+                        List.of("价格更低"),
+                        List.of(new CompareItemResponse(
+                                "10001", 92, "更均衡", List.of("便携"), List.of("无")
+                        )),
+                        List.of(new CompareDimensionResponse(
+                                "价格优势", java.util.Map.of("10001", 95, "10002", 70)
+                        ))
+                ));
 
         when(orderService.createOrder(any(CurrentUser.class), any(CreateOrderRequest.class)))
                 .thenReturn(TestFixtures.order("o10001", "CREATED"));
@@ -223,7 +267,10 @@ class ApiControllerContractTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("OK"))
-                .andExpect(jsonPath("$.data.accessToken").value("dev-access-token"));
+                .andExpect(jsonPath("$.data.access_token").value("dev-access-token"))
+                .andExpect(jsonPath("$.data.refresh_token").value("dev-refresh-token"))
+                .andExpect(jsonPath("$.data.expires_in").value(7200))
+                .andExpect(jsonPath("$.data.user.user_id").value("u10001"));
     }
 
     @Test
@@ -231,8 +278,10 @@ class ApiControllerContractTest {
         mockMvc.perform(get("/api/v1/products"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.items[0].productId").value("10001"))
-                .andExpect(jsonPath("$.data.total").value(1));
+                .andExpect(jsonPath("$.data.items[0].product_id").value("10001"))
+                .andExpect(jsonPath("$.data.items[0].image_url").isNotEmpty())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.has_next").value(false));
     }
 
     @Test
@@ -256,6 +305,35 @@ class ApiControllerContractTest {
     }
 
     @Test
+    void merchantCreateProductAcceptsSnakeCaseFields() throws Exception {
+        authenticateAs(MERCHANT);
+
+        mockMvc.perform(post("/api/v1/merchant/products")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name":"Valid product",
+                                  "description":"created through snake_case contract",
+                                  "category_id":"c_headphone",
+                                  "price":299.00,
+                                  "stock":10,
+                                  "tags":["audio"],
+                                  "image_urls":["https://example.com/product.jpg"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.product_id").value("10099"))
+                .andExpect(jsonPath("$.data.vector_index_status").value("PENDING"));
+
+        verify(productService).createProduct(
+                any(CurrentUser.class),
+                argThat(request ->
+                        "c_headphone".equals(request.categoryId())
+                                && request.imageUrls().equals(List.of("https://example.com/product.jpg")))
+        );
+    }
+
+    @Test
     void merchantProductsRequireAuthentication() throws Exception {
         mockMvc.perform(get("/api/v1/merchant/products"))
                 .andExpect(status().isUnauthorized())
@@ -269,7 +347,7 @@ class ApiControllerContractTest {
         mockMvc.perform(get("/api/v1/merchant/products"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.items[0].merchantId").value("m10001"));
+                .andExpect(jsonPath("$.data.items[0].merchant_id").value("m10001"));
     }
 
     @Test
@@ -290,7 +368,7 @@ class ApiControllerContractTest {
         mockMvc.perform(post("/api/v1/behavior-events")
                         .contentType(APPLICATION_JSON)
                         .content("""
-                                {"eventType":"DROP_TABLE","metadata":{"source":"test"}}
+                                {"event_type":"DROP_TABLE","metadata":{"source":"test"}}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -306,6 +384,64 @@ class ApiControllerContractTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_ARGUMENT"));
+    }
+
+    @Test
+    void aiChatListsSavedSessionsAndMessages() throws Exception {
+        authenticateAs(CUSTOMER);
+
+        mockMvc.perform(get("/api/v1/ai/chat/sessions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].session_id").value("s10001"))
+                .andExpect(jsonPath("$.data[0].title").value("通勤耳机"));
+
+        mockMvc.perform(get("/api/v1/ai/chat/sessions/s10001/messages"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].role").value("user"))
+                .andExpect(jsonPath("$.data[0].content").value("推荐通勤耳机"));
+    }
+
+    @Test
+    void aiCompareAcceptsTwoToFourProductsAndReturnsStructuredReport() throws Exception {
+        authenticateAs(CUSTOMER);
+
+        mockMvc.perform(post("/api/v1/ai/compare")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "product_ids":["10001","10002"],
+                                  "intent":"通勤"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.source").value("AI"))
+                .andExpect(jsonPath("$.data.winner_product_id").value("10001"))
+                .andExpect(jsonPath("$.data.dimensions[0].scores.10001").value(95));
+    }
+
+    @Test
+    void orderCreateAcceptsSnakeCaseProductId() throws Exception {
+        authenticateAs(CUSTOMER);
+
+        mockMvc.perform(post("/api/v1/orders")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "items":[{"product_id":"10001","quantity":2}],
+                                  "receiver":{"name":"Alice","phone":"13800000000","address":"Hangzhou"}
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.order_id").value("o10001"))
+                .andExpect(jsonPath("$.data.items[0].product_id").value("10001"))
+                .andExpect(jsonPath("$.data.total_amount").value("598.00"));
+
+        verify(orderService).createOrder(
+                any(CurrentUser.class),
+                argThat(request ->
+                        request.items().size() == 1
+                                && "10001".equals(request.items().get(0).productId()))
+        );
     }
 
     @Test
@@ -354,7 +490,7 @@ class ApiControllerContractTest {
                         .header("X-Internal-Token", "dev-internal-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.productId").value("10001"));
+                .andExpect(jsonPath("$.data.product_id").value("10001"));
     }
 
     @Test

@@ -2,7 +2,7 @@
 import { Eye, EyeOff, ShoppingBag } from 'lucide-vue-next'
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { login as doLogin, sessionState, setDevMode } from '../stores/session'
+import { login as doLogin, sessionState } from '../stores/session'
 import { loginApi, register } from '../services/api'
 
 const router = useRouter()
@@ -52,16 +52,7 @@ async function handleLogin() {
       router.push('/')
     }
   } catch (e: any) {
-    // Dev fallback: when backend is unavailable, simulate login
-    setDevMode()
-    const mockUser = {
-      user_id: 'u10001',
-      username: loginForm.account,
-      role: 'CUSTOMER' as string,
-      nickname: loginForm.account,
-    }
-    doLogin('dev-access-token', 'dev-refresh-token', mockUser)
-    router.push('/')
+    errorMsg.value = e instanceof Error ? e.message : '登录失败，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -103,21 +94,7 @@ async function handleRegister() {
       router.push('/')
     }
   } catch (e: any) {
-    // Dev fallback: when backend is unavailable, simulate register + login
-    setDevMode()
-    const mockUser = {
-      user_id: 'u' + Date.now(),
-      username: registerForm.username,
-      role: registerForm.role,
-      nickname: registerForm.username,
-      phone: registerForm.phone,
-    }
-    doLogin('dev-access-token', 'dev-refresh-token', mockUser)
-    if (registerForm.role === 'MERCHANT') {
-      router.push('/merchant')
-    } else {
-      router.push('/')
-    }
+    errorMsg.value = e instanceof Error ? e.message : '注册失败，请稍后重试'
   } finally {
     loading.value = false
   }
