@@ -50,12 +50,12 @@ class LabelDB:
             self._initialized = True
 
     def _normalize_embedding(self, embedding):
-        """Normalize a vector for cosine-distance style comparison."""
+        """对向量进行归一化处理，以便进行余弦距离类型的比较"""
         norm = np.linalg.norm(embedding)
         return embedding if norm == 0 else embedding / norm
 
     def _do_prod_add_product(self, product_id: str, description: str):
-        """Encode and store a product in ChromaDB."""
+        """在 ChromaDB 中编码并存储一个产品。"""
         try:
             embedding = self.model.encode([description])[0]
             embedding = self._normalize_embedding(embedding)
@@ -66,14 +66,14 @@ class LabelDB:
                 ids=[str(product_id)],
             )
         except Exception as e:
-            print(f"[Error] Failed to add product in background: {e}")
+            print(f"[错误] 后台新增产品时发生错误： {e}")
 
     def prod_add_product(self, product_id: str, description: str):
-        """Add or update a product asynchronously."""
+        """异步添加或更新产品。"""
         self.executor.submit(self._do_prod_add_product, product_id, description)
 
     def prod_delete_product(self, product_id: str):
-        """Delete a product synchronously."""
+        """同步删除产品。"""
         self.prod_collection.delete(ids=[str(product_id)])
 
     def prod_search(
@@ -120,7 +120,7 @@ class LabelDB:
         return res_ids
 
     def _do_user_add_label(self, user_id: str, query: str):
-        """Encode and store one user label, keeping at most 10 labels per user."""
+        """编码并存储一个用户标签，每个用户最多保留 10 个标签。"""
         try:
             user_id = str(user_id)
             embedding = self.model.encode([query])[0]
@@ -154,14 +154,14 @@ class LabelDB:
                     metadatas=[{"user_id": user_id, "date": now}],
                 )
         except Exception as e:
-            print(f"[Error] Failed to update user labels in background: {e}")
+            print(f"[错误] 后台更新用户标签失败： {e}")
 
     def user_add_label(self, user_id: str, query: str):
-        """Add a user label asynchronously."""
+        """异步添加用户标签。"""
         self.executor.submit(self._do_user_add_label, user_id, query)
 
     def user_search(self, user_id: str, maxnum: int = 5):
-        """Recommend products from the user's historical labels."""
+        """根据用户的历史标签推荐产品。"""
         user_id = str(user_id)
         if self.prod_collection.count() == 0:
             return []
