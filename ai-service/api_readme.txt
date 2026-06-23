@@ -1,4 +1,4 @@
-写代码的时候把这个和app/api/py_api_server.py一起扔给ai让他写吧
+
 
 # Python AI 服务接口说明
 
