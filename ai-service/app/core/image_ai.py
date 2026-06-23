@@ -22,7 +22,6 @@ class ImageAI:
     4. 调用 LabelDB.prod_search 做语义搜索，返回商品 ID。
 
     这里使用 OpenAI-compatible 的 ChatOpenAI 适配器，是为了能灵活接入不同视觉模型。
-    只要模型服务支持 OpenAI 多模态 messages 格式，就可以通过环境变量切换。
     """
 
     def __init__(
@@ -150,7 +149,7 @@ class ImageAI:
         return f"data:{mime_type};base64,{encoded}"
 
     def _parse_keywords(self, text: str) -> List[str]:
-        """解析视觉模型输出，优先解析 JSON，失败时按常见分隔符兜底。"""
+        """解析视觉模型输出，优先解析 JSON"""
 
         cleaned = text.strip()
         if cleaned.startswith("```"):
@@ -214,7 +213,7 @@ def image_search(
     model: Optional[str] = None,
     base_url: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """模块级便捷函数，便于测试或脚本直接调用视觉搜索。"""
+    """直接调用视觉搜索。"""
 
     image_ai = ImageAI(
         api_key=api_key or os.getenv("IMAGE_AI_API_KEY") or os.getenv("DEEPSEEK_API_KEY", ""),
