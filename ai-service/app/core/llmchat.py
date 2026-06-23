@@ -654,7 +654,6 @@ class llmChat:
         return messages
 
     def _normalize_stored_message(self, raw_json: str) -> Optional[Dict[str, str]]:
-        """兼容旧 LangChain message_json 和新的轻量 message_json。"""
 
         try:
             data = json.loads(raw_json)
@@ -948,7 +947,7 @@ def init(
     model: str = "deepseek-chat",
     base_url: str = "https://api.deepseek.com",
 ) -> llmChat:
-    """模块级初始化函数，符合 goals.txt 要求，返回 llmChat 实例。"""
+    """模块级初始化函数,返回 llmChat 实例。"""
 
     return llmChat(
         api_key=api_key,
