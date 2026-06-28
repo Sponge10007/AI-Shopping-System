@@ -23,6 +23,10 @@ public interface PaymentRepository extends JpaRepository<PaymentEntity, Long> {
     Optional<PaymentEntity> findByOrderId(String orderId);
 
     // 查询数据库中最大的 paymentId 数字部分（用于初始化计数器）
-    @Query("SELECT MAX(CAST(SUBSTRING(p.paymentId, 4) AS long)) FROM PaymentEntity p")
+    @Query(value = """
+            SELECT MAX(CAST(SUBSTRING(payment_id FROM 4) AS BIGINT))
+            FROM payments
+            WHERE payment_id ~ '^pay[0-9]+$'
+            """, nativeQuery = true)
     Long findMaxPaymentIdNumeric();
 }

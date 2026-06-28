@@ -33,6 +33,8 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
 
     boolean existsByProductId(String productId);
 
+    long countByStatus(String status);
+
     // 公开查询：在售商品
     Page<ProductEntity> findByStatus(String status, Pageable pageable);
 

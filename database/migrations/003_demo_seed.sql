@@ -1,8 +1,8 @@
 INSERT INTO users (user_id, username, phone, password_hash, role, status)
 VALUES
   ('u10001', 'alice', '13800000000', 'dev-password-hash', 'CUSTOMER', 'ACTIVE'),
-  ('m10001', 'merchant', '13800000001', 'dev-password-hash', 'MERCHANT', 'ACTIVE'),
-  ('admin10001', 'admin', '13800000002', 'dev-password-hash', 'ADMIN', 'ACTIVE')
+  ('m10001', 'merchant', '13800000001', '$2b$12$2f9gi1KwvsRm5EHchHV2Bu/zpfJHy1U/icqDJf2d9ul.pOHjvnLDy', 'MERCHANT', 'ACTIVE'),
+  ('admin10001', 'admin', '13800000002', '$2b$12$2f9gi1KwvsRm5EHchHV2Bu/zpfJHy1U/icqDJf2d9ul.pOHjvnLDy', 'ADMIN', 'ACTIVE')
 ON CONFLICT (user_id) DO NOTHING;
 
 INSERT INTO user_profiles (user_id, nickname, avatar_url)

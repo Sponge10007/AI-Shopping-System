@@ -150,6 +150,10 @@ export interface AdminOverview {
   today_order_count: number
   search_count_today: number
   ai_chat_count_today: number
+  active_user_count: number
+  on_sale_product_count: number
+  pending_order_count: number
+  paid_order_count: number
   ai_service_status: string
   vector_db_status: string
 }
@@ -524,19 +528,11 @@ export async function semanticSearch(query: string, filters?: {
   max_price?: string
   in_stock?: boolean
 }): Promise<{ query: string; relaxed: boolean; items: ProductSummary[] }> {
-  try {
-    const result = await request<{ query: string; relaxed: boolean; items: ProductSummary[] }>('/search/semantic', {
-      method: 'POST',
-      body: JSON.stringify({ query, filters, distance_threshold: 0.9, limit: 20 }),
-    })
-    return { ...result, items: result.items.map(normalizeProductSummary) }
-  } catch {
-    return {
-      query,
-      relaxed: false,
-      items: fallbackProducts.map((p) => ({ ...p, reason: `"${query}" 的本地示例结果` })),
-    }
-  }
+  const result = await request<{ query: string; relaxed: boolean; items: ProductSummary[] }>('/search/semantic', {
+    method: 'POST',
+    body: JSON.stringify({ query, filters, distance_threshold: 0.9, limit: 20 }),
+  })
+  return { ...result, items: result.items.map(normalizeProductSummary) }
 }
 
 export async function imageSearch(file: File, limit?: number): Promise<{

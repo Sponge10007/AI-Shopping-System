@@ -73,13 +73,13 @@ describe('frontend API service', () => {
     }))
   })
 
-  it('returns fallback data for read-only discovery and chat flows when backend is unavailable', async () => {
+  it('returns fallback data for passive discovery but surfaces semantic-search failure', async () => {
     fetchMock.mockRejectedValue(new Error('backend down'))
 
     await expect(getProductList({ keyword: '耳机' })).resolves.toMatchObject({ total: 3 })
     await expect(getProductDetail('p-offline')).resolves.toMatchObject({ product_id: 'p-offline', name: '蓝牙降噪耳机' })
     await expect(getProductDetail('10002')).resolves.toMatchObject({ product_id: '10002', name: '智能保温杯' })
-    await expect(semanticSearch('通勤耳机')).resolves.toMatchObject({ query: '通勤耳机', items: expect.any(Array) })
+    await expect(semanticSearch('通勤耳机')).rejects.toThrow('backend down')
     await expect(homeRecommendations(3)).resolves.toMatchObject({ strategy: 'FALLBACK', items: expect.any(Array) })
     await expect(sendChatMessage('s1', '怎么选耳机')).resolves.toMatchObject({ session_id: 's1', answer: expect.stringContaining('本地示例回复') })
   })

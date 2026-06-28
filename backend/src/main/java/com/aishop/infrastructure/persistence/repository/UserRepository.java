@@ -34,15 +34,17 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     boolean existsByPhone(String phone);
 
+    long countByStatus(String status);
+
     @Query("""
             SELECT u
             FROM UserEntity u
-            WHERE (:role IS NULL OR u.role = :role)
+            WHERE (:role = '' OR u.role = :role)
               AND (
-                    :keyword IS NULL
+                    :keyword = ''
                     OR LOWER(u.userId) LIKE CONCAT('%', :keyword, '%')
                     OR LOWER(u.username) LIKE CONCAT('%', :keyword, '%')
-                    OR LOWER(u.phone) LIKE CONCAT('%', :keyword, '%')
+                    OR LOWER(COALESCE(u.phone, '')) LIKE CONCAT('%', :keyword, '%')
                   )
             """)
     Page<UserEntity> findAdminUsers(

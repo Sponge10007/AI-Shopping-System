@@ -7,6 +7,10 @@ public record AdminMetricsResponse(
         long todayOrderCount,
         long searchCountToday,
         long aiChatCountToday,
+        long activeUserCount,
+        long onSaleProductCount,
+        long pendingOrderCount,
+        long paidOrderCount,
         String aiServiceStatus,
         String vectorDbStatus
 ) {

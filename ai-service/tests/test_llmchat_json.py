@@ -197,6 +197,66 @@ def test_grounded_chat_without_candidates_forbids_specific_products():
     assert "不得推荐任何具体品牌、型号或商品" in messages[0]["content"]
 
 
+def test_product_recall_relaxes_until_enough_valid_products():
+    module = load_llmchat_module()
+    client = parser()
+    thresholds = []
+
+    class FakeLabelDB:
+        def prod_search(self, **kwargs):
+            threshold = kwargs["distance_threshold"]
+            thresholds.append(threshold)
+            if threshold == 0.9:
+                return ["10003"]
+            return ["10003", "stale-index", "10009", "10006"]
+
+    details = {
+        "10003": "商品名称：轻量运动背包",
+        "stale-index": "",
+        "10009": "商品名称：轻量防晒冲锋衣",
+        "10006": "商品名称：便携机械键盘",
+    }
+    client._get_label_db = lambda: FakeLabelDB()
+    client.search = lambda product_id: details[product_id]
+
+    products = client._search_products_for_ai(
+        query="适合下雨天出行的衣服",
+        distance_threshold=0.9,
+        max_results=3,
+        recall_limit=50,
+    )
+
+    assert thresholds == [0.9, 1.5]
+    assert products == [
+        "商品名称：轻量运动背包",
+        "商品名称：轻量防晒冲锋衣",
+        "商品名称：便携机械键盘",
+    ]
+
+
+def test_product_recall_stops_when_strict_threshold_has_enough_products():
+    module = load_llmchat_module()
+    client = parser()
+    thresholds = []
+
+    class FakeLabelDB:
+        def prod_search(self, **kwargs):
+            thresholds.append(kwargs["distance_threshold"])
+            return ["10001", "10002"]
+
+    client._get_label_db = lambda: FakeLabelDB()
+    client.search = lambda product_id: f"商品名称：{product_id}"
+
+    products = client._search_products_for_ai(
+        query="推荐商品",
+        distance_threshold=0.9,
+        max_results=2,
+    )
+
+    assert thresholds == [0.9]
+    assert products == ["商品名称：10001", "商品名称：10002"]
+
+
 def test_parse_model_answer_extracts_relative_product_link():
     module = load_llmchat_module()
     client = parser()

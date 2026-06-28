@@ -92,6 +92,19 @@ describe('ShoppingView', () => {
     expect(wrapper.text()).toContain('蓝牙降噪耳机')
   })
 
+  it('shows when the backend returned relaxed rather than precise matches', async () => {
+    mockHome()
+    vi.mocked(api.semanticSearch).mockResolvedValue({ query: '不存在的商品', relaxed: true, items: [product] })
+
+    const wrapper = mount(ShoppingView)
+    await flushPromises()
+    await wrapper.get('input[aria-label="AI 搜索"]').setValue('不存在的商品')
+    await wrapper.get('form.ai-search-box').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('没有找到精确匹配')
+  })
+
   it('shows empty and error states without crashing when data is missing or search fails', async () => {
     mockHome([], [])
     vi.mocked(api.semanticSearch).mockRejectedValue(new Error('search down'))

@@ -1,7 +1,6 @@
 package com.aishop;
 
 import com.aishop.infrastructure.ai.AiServiceClient;
-import com.aishop.infrastructure.persistence.entity.OrderEntity;
 import com.aishop.infrastructure.persistence.entity.UserEntity;
 import com.aishop.infrastructure.persistence.repository.BehaviorLogRepository;
 import com.aishop.infrastructure.persistence.repository.OrderRepository;
@@ -58,7 +57,11 @@ class AdminServiceTest {
         when(userRepository.count()).thenReturn(3L);
         when(productRepository.count()).thenReturn(2L);
         when(orderRepository.count()).thenReturn(1L);
-        when(orderRepository.findAll()).thenReturn(List.of(todayOrder()));
+        when(userRepository.countByStatus("ACTIVE")).thenReturn(2L);
+        when(productRepository.countByStatus("ON_SALE")).thenReturn(2L);
+        when(orderRepository.countByStatus("CREATED")).thenReturn(1L);
+        when(orderRepository.countByStatus("PAID")).thenReturn(0L);
+        when(orderRepository.countByCreatedAtAfter(any(OffsetDateTime.class))).thenReturn(1L);
         when(behaviorLogRepository.countByEventTypeAndCreatedAtAfter(anyString(), any(OffsetDateTime.class)))
                 .thenReturn(2L);
         when(aiServiceClient.health()).thenReturn(false);
@@ -71,6 +74,10 @@ class AdminServiceTest {
         assertThat(response.todayOrderCount()).isEqualTo(1);
         assertThat(response.searchCountToday()).isEqualTo(4);
         assertThat(response.aiChatCountToday()).isEqualTo(2);
+        assertThat(response.activeUserCount()).isEqualTo(2);
+        assertThat(response.onSaleProductCount()).isEqualTo(2);
+        assertThat(response.pendingOrderCount()).isEqualTo(1);
+        assertThat(response.paidOrderCount()).isZero();
         assertThat(response.aiServiceStatus()).isEqualTo("DOWN");
         assertThat(response.vectorDbStatus()).isEqualTo("UNKNOWN");
     }
@@ -95,6 +102,17 @@ class AdminServiceTest {
         );
     }
 
+    @Test
+    void listUsersUsesEmptyStringsForMissingFiltersToKeepPostgresTypesStable() {
+        when(userRepository.findAdminUsers(eq(""), eq(""), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        var response = adminService.listUsers(null, "   ", 1, 100);
+
+        assertThat(response.items()).isEmpty();
+        verify(userRepository).findAdminUsers(eq(""), eq(""), any(Pageable.class));
+    }
+
     private UserEntity user(String userId, String username, String phone, String role) {
         UserEntity user = new UserEntity();
         user.setUserId(userId);
@@ -107,13 +125,4 @@ class AdminServiceTest {
         return user;
     }
 
-    private OrderEntity todayOrder() {
-        OrderEntity order = new OrderEntity();
-        order.setOrderId("o10001");
-        order.setUserId("u10001");
-        order.setStatus("CREATED");
-        order.setCreatedAt(OffsetDateTime.now());
-        order.setUpdatedAt(OffsetDateTime.now());
-        return order;
-    }
 }

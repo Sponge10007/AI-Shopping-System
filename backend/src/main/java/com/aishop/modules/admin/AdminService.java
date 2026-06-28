@@ -86,7 +86,7 @@ public class AdminService {
 
     private String normalizeRole(String role) {
         if (role == null || role.isBlank()) {
-            return null;
+            return "";
         }
 
         String normalized = role.trim().toUpperCase(Locale.ROOT);
@@ -101,7 +101,7 @@ public class AdminService {
 
     private String normalizeKeyword(String keyword) {
         if (keyword == null || keyword.isBlank()) {
-            return null;
+            return "";
         }
         return keyword.trim().toLowerCase(Locale.ROOT);
     }
@@ -155,28 +155,26 @@ public class AdminService {
         long userCount = userRepository.count();
         long productCount = productRepository.count();
         long orderCount = orderRepository.count();
+        long activeUserCount = userRepository.countByStatus("ACTIVE");
+        long onSaleProductCount = productRepository.countByStatus("ON_SALE");
+        long pendingOrderCount = orderRepository.countByStatus("CREATED");
+        long paidOrderCount = orderRepository.countByStatus("PAID");
         boolean aiUp = aiServiceClient.health();
 
         // 今日新增订单数（从当天 0 点开始统计）
         OffsetDateTime todayStart = OffsetDateTime.now()
                 .withHour(0).withMinute(0).withSecond(0).withNano(0);
-        // 简化实现：使用 count 方法，实际应使用自定义查询
-        long todayOrderCount = 0;
-        try {
-            // 这里使用 findAll 后过滤，生产环境应使用 @Query 统计
-            todayOrderCount = orderRepository.findAll().stream()
-                    .filter(o -> o.getCreatedAt() != null && o.getCreatedAt().isAfter(todayStart))
-                    .count();
-        } catch (Exception e) {
-            log.warn("统计今日订单数失败: {}", e.getMessage());
-        }
+        long todayOrderCount = orderRepository.countByCreatedAtAfter(todayStart);
 
         long searchCountToday = behaviorLogRepository.countByEventTypeAndCreatedAtAfter("SEARCH", todayStart)
                 + behaviorLogRepository.countByEventTypeAndCreatedAtAfter("IMAGE_SEARCH", todayStart);
         long chatCountToday = behaviorLogRepository.countByEventTypeAndCreatedAtAfter("CHAT", todayStart);
 
-        log.info("管理员查看平台概览: users={}, products={}, orders={}, todayOrders={}, searches={}, chats={}",
-                userCount, productCount, orderCount, todayOrderCount, searchCountToday, chatCountToday);
+        log.info("管理员查看平台概览: users={}, activeUsers={}, products={}, onSaleProducts={}, " +
+                        "orders={}, pendingOrders={}, paidOrders={}, todayOrders={}, searches={}, chats={}",
+                userCount, activeUserCount, productCount, onSaleProductCount,
+                orderCount, pendingOrderCount, paidOrderCount, todayOrderCount,
+                searchCountToday, chatCountToday);
 
         return new AdminMetricsResponse(
                 userCount,
@@ -185,6 +183,10 @@ public class AdminService {
                 todayOrderCount,
                 searchCountToday,
                 chatCountToday,
+                activeUserCount,
+                onSaleProductCount,
+                pendingOrderCount,
+                paidOrderCount,
                 aiUp ? "UP" : "DOWN",
                 aiUp ? "UP" : "UNKNOWN"
         );

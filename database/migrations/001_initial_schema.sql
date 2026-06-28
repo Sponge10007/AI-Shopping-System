@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS product_images (
 
 CREATE TABLE IF NOT EXISTS orders (
   id BIGSERIAL PRIMARY KEY,
-  order_id VARCHAR(64) NOT NULL UNIQUE,
+  order_id VARCHAR(64) NOT NULL UNIQUE
+    CONSTRAINT orders_order_id_format CHECK (order_id ~ '^o[0-9]+$'),
   user_id VARCHAR(64) NOT NULL REFERENCES users(user_id),
   status VARCHAR(32) NOT NULL DEFAULT 'CREATED',
   total_amount NUMERIC(12, 2) NOT NULL,
@@ -69,7 +70,8 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE TABLE IF NOT EXISTS payments (
   id BIGSERIAL PRIMARY KEY,
-  payment_id VARCHAR(64) NOT NULL UNIQUE,
+  payment_id VARCHAR(64) NOT NULL UNIQUE
+    CONSTRAINT payments_payment_id_format CHECK (payment_id ~ '^pay[0-9]+$'),
   order_id VARCHAR(64) NOT NULL REFERENCES orders(order_id),
   amount NUMERIC(12, 2) NOT NULL,
   method VARCHAR(32) NOT NULL,

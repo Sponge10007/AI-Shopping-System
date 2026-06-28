@@ -31,7 +31,10 @@ const emit = defineEmits<{
         <div class="match-row">
           <span>
             <Sparkles :size="13" />
-            AI 匹配度 {{ product.score ? Math.round(product.score * 100) : 98 }}%
+            <template v-if="product.score != null">
+              AI 匹配度 {{ Math.round(product.score * 100) }}%
+            </template>
+            <template v-else>热门推荐</template>
           </span>
           <span>
             <Star :size="13" />

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 /**
@@ -25,6 +26,10 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 
     boolean existsByOrderId(String orderId);
 
+    long countByStatus(String status);
+
+    long countByCreatedAtAfter(OffsetDateTime after);
+
     // 买家查询自己的订单
     Page<OrderEntity> findByUserId(String userId, Pageable pageable);
 
@@ -32,6 +37,10 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     Page<OrderEntity> findByUserIdAndStatus(String userId, String status, Pageable pageable);
 
     // 查询数据库中最大的 orderId 数字部分（用于初始化计数器）
-    @Query("SELECT MAX(CAST(SUBSTRING(o.orderId, 2) AS long)) FROM OrderEntity o")
+    @Query(value = """
+            SELECT MAX(CAST(SUBSTRING(order_id FROM 2) AS BIGINT))
+            FROM orders
+            WHERE order_id ~ '^o[0-9]+$'
+            """, nativeQuery = true)
     Long findMaxOrderIdNumeric();
 }

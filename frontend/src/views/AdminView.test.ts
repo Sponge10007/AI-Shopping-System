@@ -93,6 +93,10 @@ describe('Admin views', () => {
       today_order_count: 1,
       search_count_today: 5,
       ai_chat_count_today: 6,
+      active_user_count: 2,
+      on_sale_product_count: 2,
+      pending_order_count: 1,
+      paid_order_count: 0,
       ai_service_status: 'UP',
       vector_db_status: 'UP',
     })
@@ -104,6 +108,10 @@ describe('Admin views', () => {
     expect(wrapper.text()).toContain('商品')
     expect(wrapper.text()).toContain('AI Service')
     expect(wrapper.text()).toContain('Vector DB')
+    expect(wrapper.text()).toContain('自然语言搜索')
+    expect(wrapper.text()).toContain('AI 导购对话')
+    expect(wrapper.text()).toContain('活跃账号')
+    expect(wrapper.text()).toContain('在售商品')
 
     vi.mocked(api.getAdminOverview).mockRejectedValueOnce(new Error('metrics down'))
     mount(AdminMetricsView)

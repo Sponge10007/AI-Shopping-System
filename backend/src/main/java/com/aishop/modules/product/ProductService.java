@@ -398,6 +398,30 @@ public class ProductService {
     }   
 
     /**
+     * 返回用于混合搜索重排的完整在售商品数据。
+     *
+     * 语义向量只负责召回，搜索服务还需要商品分类、描述和标签执行硬条件过滤与
+     * 关键词重排，因此不能只依赖向量库中可能不完整的商品集合。
+     */
+    public List<ProductResponse> searchableProducts(int limit) {
+        int normalizedLimit = Math.min(Math.max(limit, 1), 500);
+        Pageable pageable = PageRequest.of(
+                0,
+                normalizedLimit,
+                Sort.by(Sort.Order.desc("sales"), Sort.Order.desc("rating"), Sort.Order.desc("createdAt"))
+        );
+
+        return productRepository.findByStatus("ON_SALE", pageable)
+                .getContent()
+                .stream()
+                .map(product -> toProductResponse(
+                        product,
+                        productImageRepository.findByProductIdOrderBySortOrderAsc(product.getProductId())
+                ))
+                .toList();
+    }
+
+    /**
      * 兼容方法 — 供 AI/推荐/搜索模块使用
      * 返回数据库中所有在售商品的摘要列表
      */

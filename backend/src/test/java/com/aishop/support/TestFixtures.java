@@ -107,6 +107,6 @@ public final class TestFixtures {
     }
 
     public static AdminMetricsResponse adminMetrics() {
-        return new AdminMetricsResponse(3, 2, 1, 1, 0, 0, "UP", "UP");
+        return new AdminMetricsResponse(3, 2, 1, 1, 0, 0, 3, 2, 1, 0, "UP", "UP");
     }
 }

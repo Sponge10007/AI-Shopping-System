@@ -269,28 +269,38 @@ class llmChat:
         """用 LabelDB 找商品 ID，再通过 Java 内部接口取商品摘要。"""
 
         limit = max(1, min(int(max_results), 5))
-        product_ids = []
+        product_ids: List[str] = []
+        seen_product_ids = set()
+        product_infos: List[str] = []
         for threshold in self._relaxed_thresholds(distance_threshold):
-            product_ids = self._get_label_db().prod_search(
+            recalled_ids = self._get_label_db().prod_search(
                 user_id="-1",
                 query=query,
                 distance_threshold=threshold,
                 limit=recall_limit,
             )
-            if product_ids:
+            for product_id in recalled_ids:
+                product_id = str(product_id)
+                if product_id in seen_product_ids:
+                    continue
+                seen_product_ids.add(product_id)
+                product_ids.append(product_id)
+
+                detail = self.search(product_id)
+                if detail and "状态：已下架" not in detail:
+                    product_infos.append(detail)
+                    if len(product_infos) >= limit:
+                        break
+
+            if len(product_infos) >= limit:
                 break
 
-        product_infos = []
-        for product_id in product_ids[:limit]:
-            detail = self.search(str(product_id))
-            if detail and "状态：已下架" not in detail:
-                product_infos.append(detail)
         print(
             "[AI Chat] 数据库商品召回完成: "
-            f"query={query[:80]!r}, ids={product_ids[:limit]}, "
+            f"query={query[:80]!r}, ids={product_ids}, "
             f"usable={len(product_infos)}"
         )
-        return product_infos
+        return product_infos[:limit]
 
     def _build_grounded_chat_messages(
         self,

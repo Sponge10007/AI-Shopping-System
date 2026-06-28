@@ -20,6 +20,7 @@ const activeCategory = ref('全部')
 const searchMode = ref<'semantic' | 'image'>('semantic')
 const imageFile = ref<File | null>(null)
 const searchError = ref('')
+const searchNotice = ref('')
 const focusProduct = computed(() => products.value[0])
 
 const categories = [
@@ -39,6 +40,7 @@ onMounted(loadHome)
 async function loadHome() {
   loading.value = true
   searchError.value = ''
+  searchNotice.value = ''
   try {
     const [page, recs] = await Promise.all([
       getProductList(),
@@ -57,6 +59,7 @@ async function handleCategoryClick(category: (typeof categories)[0]) {
   activeCategory.value = category.label
   loading.value = true
   searchError.value = ''
+  searchNotice.value = ''
   try {
     const params: any = {}
     if (category.id) params.category_id = category.id
@@ -82,11 +85,17 @@ async function handleSearch() {
 
   loading.value = true
   searchError.value = ''
+  searchNotice.value = ''
 
   try {
     if (searchMode.value === 'semantic') {
       const result = await semanticSearch(query)
       products.value = result.items
+      if (result.relaxed) {
+        searchNotice.value = result.items.length
+          ? '没有找到精确匹配，下面展示的是热门商品。'
+          : '没有找到符合品类或预算条件的商品，请调整描述后重试。'
+      }
     } else if (imageFile.value) {
       const result = await imageSearch(imageFile.value)
       products.value = result.items
@@ -149,6 +158,7 @@ function handleImageUpload(event: Event) {
         </form>
 
         <p v-if="searchError" class="search-error">{{ searchError }}</p>
+        <p v-else-if="searchNotice" class="search-notice">{{ searchNotice }}</p>
         <p v-else class="hero-hint">试着说："适合上班通勤、预算三百元以内的降噪耳机"</p>
       </div>
     </section>
@@ -240,6 +250,12 @@ function handleImageUpload(event: Event) {
 .search-error {
   margin: 18px 0 0;
   color: #d32f2f;
+  font-size: 0.88rem;
+}
+
+.search-notice {
+  margin: 18px 0 0;
+  color: #8a5a00;
   font-size: 0.88rem;
 }
 
